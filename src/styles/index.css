@@ -1,0 +1,106 @@
+/* approval-page */
+.approval-page {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  
+  /* approval-title */
+  .approval-title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  /* filter-wrapper */
+  .filter-wrapper {
+    margin-bottom: 20px;
+  }
+  
+  .filter-wrapper label {
+    font-size: 1rem;
+    margin-right: 10px;
+  }
+  
+  .filter-select {
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  /* approval-list */
+  .approval-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  /* approval-card */
+  .approval-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 15px;
+  }
+  
+  .approval-card .approval-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .badge {
+    font-size: 1.2rem;
+    font-weight: bold;
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+  }
+  
+  .approval-date {
+    font-size: 1rem;
+    color: #555;
+  }
+  
+  .approval-body {
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .approval-body div {
+    margin-bottom: 5px;
+  }
+  
+  /* approval-approvers */
+  .approval-approvers {
+    margin-top: 10px;
+  }
+  
+  .approver-status {
+    font-size: 0.9rem;
+    padding: 5px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  
+  .approver-status.承認済み {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .approver-status.承認待ち {
+    background-color: #ff9800;
+    color: white;
+  }
+  
+  .approver-status.否決 {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .rejection-comment {
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: #f44336;
+  }

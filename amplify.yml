@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # 依存関係のインストール
+        - npm install
+    build:
+      commands:
+        # React アプリのビルド
+        - npm run build
+  artifacts:
+    # ビルド後にデプロイするフォルダ
+    baseDirectory: /build
+    files:
+      - '**/*'
+  cache:
+    # キャッシュするディレクトリ
+    paths:
+      - node_modules/**/*

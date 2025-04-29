@@ -1,14 +1,13 @@
-
 /* approver status icon and name layout */
 .approver-status-icon {
   display: flex;
   justify-content: flex-start; /* Ensure the elements are aligned horizontally */
   align-items: center;
-  margin-bottom: 5px; /* Adds some space between the approvers */
+  margin-bottom: 10px; /* Increase space between approvers */
 }
 
 .approver-status-icon span {
-  margin-left: 8px; /* Space between the icon and the name */
+  margin-left: 10px; /* Increase space between the icon and the name */
 }
 
 /* Approver section layout */
@@ -25,50 +24,55 @@
 
 /* Status icon and approver name */
 .approver-status {
-  font-size: 0.9rem;
-  padding: 5px;
+  font-size: 1rem;
+  padding: 6px;
   border-radius: 4px;
-  margin-right: 10px; /* Space for the approval button */
+  margin-right: 15px; /* Increase space for the approval button */
 }
 
 .approver-status.承認待ち {
   background-color: #ff9800;
   color: white;
+  padding: 6px 12px;
 }
 
 .approver-status.承認済み {
   background-color: #4CAF50;
   color: white;
+  padding: 6px 12px;
 }
 
 .approver-status.否決 {
   background-color: #f44336;
   color: white;
+  padding: 6px 12px;
 }
 
 /* Buttons for approval and rejection */
 .approver button {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 10px 20px;
+  font-size: 16px;
   cursor: pointer;
   border: none;
-  border-radius: 4px;
-  margin-left: 8px;
+  border-radius: 6px;
+  margin-left: 10px;
 }
 
 .approver .approve-btn {
   background-color: #4caf50;
   color: white;
+  transition: background-color 0.3s ease;
 }
 
 .approver .reject-btn {
   background-color: #f44336;
   color: white;
+  transition: background-color 0.3s ease;
 }
 
 /* Hover and active button effects */
 .approver button:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .approver button:active {
@@ -238,13 +242,13 @@
   border-top: 8px solid #f44336; /* Change to red color */
   border-radius: 50%;
   width: 60px;
-  height: 100%;
+  height: 60px; /* Fixed height for better scaling */
   animation: spin 1s linear infinite;
-  margin: 0 auto;
-  position: absolute; /* To position it within the parent container */
-  top: 50%; /* Center vertically */
-  left: 50%; /* Center horizontally */
-  transform: translate(-50%, -50%); /* Adjust for exact centering */
+  position: fixed; /* Use fixed to ensure it stays in the center during scrolling */
+  top: 50%; /* 50% from the top of the viewport */
+  left: 50%; /* 50% from the left of the viewport */
+  transform: translate(-50%, -50%); /* This ensures it's exactly centered */
+  z-index: 9999; /* Make sure it's on top of other elements */
 }
 
 @keyframes spin {

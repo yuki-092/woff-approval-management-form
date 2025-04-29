@@ -109,7 +109,7 @@ export const ApprovalManagementForm = () => {
               <div><strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}</div>
               <div><strong>申請日数:</strong> {approval.days} 日</div>
               <div className="approver">
-                <div>承認者1</div>
+                <div><strong>承認者1</strong></div>
                 <div className="approver-status-icon">
                   <span>
                     {approval.approver1Status === "承認待ち" && "⏳"}
@@ -118,7 +118,7 @@ export const ApprovalManagementForm = () => {
                   </span>
                   <span>{approval.approver1Name}</span>
                 </div>
-                <div>{approval.approver1Status}</div>
+                <div className="approver-status">{approval.approver1Status}</div>
                 <div>{approval.approver1Comment || "ー"}</div>
                 {approval.approver1Status !== "承認待ち" && approval.approver1ApprovedAt && (
                   <div>
@@ -128,14 +128,14 @@ export const ApprovalManagementForm = () => {
                   </div>
                 )}
                 {approval.approver1Status === "承認待ち" && (
-                  <div>
-                    <button className="approve-btn">承認</button>
+                  <div className="button-container">
                     <button className="reject-btn">否決</button>
+                    <button className="approve-btn">承認</button>
                   </div>
                 )}
               </div>
               <div className="approver">
-                <div>承認者2</div>
+                <div><strong>承認者2</strong></div>
                 <div className="approver-status-icon">
                   <span>
                     {approval.approver2Status === "承認待ち" && "⏳"}
@@ -144,7 +144,7 @@ export const ApprovalManagementForm = () => {
                   </span>
                   <span>{approval.approver2Name}</span>
                 </div>
-                <div>{approval.approver2Status}</div>
+                <div className="approver-status">{approval.approver2Status}</div>
                 <div>{approval.approver2Comment || "ー"}</div>
                 {approval.approver2Status !== "承認待ち" && approval.approver2ApprovedAt && (
                   <div>
@@ -154,9 +154,9 @@ export const ApprovalManagementForm = () => {
                   </div>
                 )}
                 {approval.approver2Status === "承認待ち" && (
-                  <div>
-                    <button className="approve-btn">承認</button>
+                  <div className="button-container">
                     <button className="reject-btn">否決</button>
+                    <button className="approve-btn">承認</button>
                   </div>
                 )}
               </div>

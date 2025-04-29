@@ -1,3 +1,79 @@
+
+/* approver status icon and name layout */
+.approver-status-icon {
+  display: flex;
+  justify-content: flex-start; /* Ensure the elements are aligned horizontally */
+  align-items: center;
+  margin-bottom: 5px; /* Adds some space between the approvers */
+}
+
+.approver-status-icon span {
+  margin-left: 8px; /* Space between the icon and the name */
+}
+
+/* Approver section layout */
+.approver {
+  display: flex;
+  justify-content: space-between; /* Space between elements horizontally */
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Status icon and approver name */
+.approver-status {
+  font-size: 0.9rem;
+  padding: 5px;
+  border-radius: 4px;
+  margin-right: 10px; /* Space for the approval button */
+}
+
+.approver-status.承認待ち {
+  background-color: #ff9800;
+  color: white;
+}
+
+.approver-status.承認済み {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.approver-status.否決 {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Buttons for approval and rejection */
+.approver button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.approver .approve-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.approver .reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Hover and active button effects */
+.approver button:hover {
+  opacity: 0.8;
+}
+
+.approver button:active {
+  transform: scale(0.98);
+}
 /* approval-page */
 .approval-page {
     font-family: Arial, sans-serif;
@@ -40,12 +116,15 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    padding: 15px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
   
-  .approval-card .approval-header {
+  .approval-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 10px;
   }
   
@@ -56,13 +135,17 @@
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
+    flex-shrink: 0;
   }
   
   .approval-date {
     font-size: 1rem;
     color: #555;
+    text-align: right;
+    flex-grow: 1;
   }
   
+  /* applicant details */
   .approval-body {
     font-size: 0.9rem;
     color: #333;
@@ -72,9 +155,24 @@
     margin-bottom: 5px;
   }
   
-  /* approval-approvers */
+  /* approver status section */
   .approval-approvers {
-    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  
+  .approver {
+    background-color: #f5f5f5;
+    padding: 10px;
+    padding-left: 15px; /* Added left padding */
+    padding-right: 15px; /* Added right padding */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: calc(100% - 30px); /* Subtracted total padding (15px left and right) */
   }
   
   .approver-status {
@@ -84,13 +182,13 @@
     margin-bottom: 5px;
   }
   
-  .approver-status.承認済み {
-    background-color: #4CAF50;
+  .approver-status.承認待ち {
+    background-color: #ff9800;
     color: white;
   }
   
-  .approver-status.承認待ち {
-    background-color: #ff9800;
+  .approver-status.承認済み {
+    background-color: #4CAF50;
     color: white;
   }
   
@@ -100,21 +198,73 @@
   }
   
   .rejection-comment {
-    margin-top: 5px;
     font-size: 0.85rem;
     color: #f44336;
+    font-style: italic;
+    margin-top: 5px;
   }
+  
+  /* approver buttons */
+  .approver button {
+    padding: 8px 16px;
+    margin-top: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+  }
+  
+  .approver .approve-btn {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .approver .reject-btn {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  /* Additional hover effects for buttons */
+  .approver button:hover {
+    opacity: 0.8;
+  }
+  
+  .approver button:active {
+    transform: scale(0.98);
+  }
+/* Centered loading spinner */
 .loader {
   border: 8px solid #f3f3f3;
-  border-top: 8px solid #007bff; /* 青色に変更 */
+  border-top: 8px solid #f44336; /* Change to red color */
   border-radius: 50%;
   width: 60px;
-  height: 60px;
+  height: 100%;
   animation: spin 1s linear infinite;
-  margin: 20px auto;
+  margin: 0 auto;
+  position: absolute; /* To position it within the parent container */
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust for exact centering */
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+.approval-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.badge {
+  margin-right: 10px;
+  flex-shrink: 0; /* Prevent the badge from shrinking */
+}
+
+.approval-date {
+  text-align: right; /* Align the date to the right */
+  flex-grow: 1; /* Allow the date to take the available space */
+  margin-left: auto; /* Push the date to the far right */
 }

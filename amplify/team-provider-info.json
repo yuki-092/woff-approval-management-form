@@ -15,7 +15,7 @@
       "function": {
         "fetchPendingRequests": {
           "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",
-          "s3Key": "amplify-builds/fetchPendingRequests-6f455374666a4e2f6551-build.zip"
+          "s3Key": "amplify-builds/fetchPendingRequests-6c326e5a504c4c767657-build.zip"
         }
       }
     }

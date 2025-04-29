@@ -74,7 +74,7 @@ export const ApprovalManagementForm = () => {
         </select>
       </div>
       <div className="approval-list">
-        {filteredApprovals.map((approval) => (
+        {filteredApprovals?.map((approval) => (
           <div key={approval.requestId} className="approval-card">
             <div className="approval-header">
               <span className="badge">{approval.type}</span>
@@ -83,7 +83,7 @@ export const ApprovalManagementForm = () => {
             <div className="approval-body">
               <div>期間: {approval.startDate} 〜 {approval.endDate}</div>
               <div className="approval-approvers">
-                {approval.approvals.map((a, index) => (
+                {approval.approvals?.map((a, index) => (
                   <div key={index} className={`approver-status ${a.status}`}>
                     {a.approver}: {a.status}
                     {a.status === "否決" && a.comment && (

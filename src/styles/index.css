@@ -239,17 +239,12 @@
 /* Centered loading spinner */
 .loader {
   border: 8px solid #f3f3f3;
-  border-top: 8px solid #f44336; /* Change to red color */
+  border-top: 8px solid #ae1d23;
   border-radius: 50%;
-  width: 10vw; /* Relative width (adjust as per requirement) */
-  height: 10vw; /* Relative height (adjust as per requirement) */
+  width: 60px;
+  height: 60px;
   animation: spin 1s linear infinite;
-  position: fixed; /* Use fixed to ensure it stays in the center during scrolling */
-  top: 50%; /* 50% from the top of the viewport */
-  left: 50%; /* 50% from the left of the viewport */
-  transform: translate(-50%, -50%); /* This ensures it's exactly centered */
-  z-index: 9999; /* Make sure it's on top of other elements */
-  padding: 2rem; /* Adding padding to adjust the size relative to the viewport */
+  margin: 20px auto;
 }
 
 @keyframes spin {

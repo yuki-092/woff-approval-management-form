@@ -70,7 +70,7 @@ export const ApprovalManagementForm = () => {
   return (
     <div className="approval-page">
       <h1 className="approval-title">未承認リスト一覧</h1>
-      <div className="filter-wrapper">
+      {/* <div className="filter-wrapper">
         <label htmlFor="filter-select">申請種別で絞り込み:</label>
         <select
           id="filter-select"
@@ -82,7 +82,7 @@ export const ApprovalManagementForm = () => {
           <option value="休日申請">休日申請</option>
           <option value="稟議申請">稟議申請</option>
         </select>
-      </div>
+      </div> */}
       <div className="approval-list">
         {filteredApprovals?.map((approval) => (
           <div key={approval.requestId} className="approval-card">

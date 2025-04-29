@@ -1,5 +1,4 @@
-// src/pages/MyApprovals.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type ApprovalStatus = {
   approver: string;
@@ -16,43 +15,47 @@ type ApprovalData = {
   approvals: ApprovalStatus[];
 };
 
-const dummyData: ApprovalData[] = [
-  {
-    requestId: "REQ123",
-    submittedAt: "2025-04-28",
-    startDate: "2025-05-01",
-    endDate: "2025-05-03",
-    type: "休日申請",
-    approvals: [
-      { approver: "上司", status: "承認済み" },
-      { approver: "人事部", status: "承認待ち" },
-    ],
-  },
-  {
-    requestId: "REQ124",
-    submittedAt: "2025-04-26",
-    startDate: "2025-05-05",
-    endDate: "2025-05-06",
-    type: "稟議申請",
-    approvals: [
-      { approver: "上司", status: "承認済み" },
-      { approver: "部門長", status: "否決", comment: "予算超過のため却下しました" },
-      { approver: "役員", status: "承認待ち" },
-    ],
-  },
-];
-
 export const ApprovalManagementForm = () => {
-  const [approvals, setApprovals] = useState<ApprovalData[]>([]);  // 型引数を追加
-  const [filterType, setFilterType] = useState("");  // 正しく修正
+  const [approvals, setApprovals] = useState<ApprovalData[]>([]);
+  const [filterType, setFilterType] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setApprovals(dummyData);
+    // データを取得する関数
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          "https://eoqz5mwu3ipr4figpesygumzhq0eubjk.lambda-url.ap-northeast-1.on.aws/"
+        );
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setApprovals(data.items);
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const filteredApprovals = filterType
     ? approvals.filter((approval) => approval.type === filterType)
     : approvals;
+
+  if (loading) {
+    return (
+      <div className="loader"></div> // ぐるぐるローディングインジケータを表示
+    );
+  }
+
+  if (error) {
+    return <div>エラー: {error}</div>;
+  }
 
   return (
     <div className="approval-page">
@@ -97,4 +100,4 @@ export const ApprovalManagementForm = () => {
   );
 };
 
-export default ApprovalManagementForm; 
+export default ApprovalManagementForm;

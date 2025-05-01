@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
 
+type Approver = {
+  approverId: string;
+  approverStatus: string;
+  approverApprovedAt: string;
+  approverComment: string;
+  approverName: string;
+};
 
 type ApprovalData = {
   requestId: string;
@@ -9,16 +16,7 @@ type ApprovalData = {
   type: string;
   days: number; 
   displayName: string;
-  approver1Id: string;
-  approver1Status: string;
-  approver1ApprovedAt: string;
-  approver1Comment: string;
-  approver1Name: string;
-  approver2Id: string;
-  approver2Status: string;
-  approver2ApprovedAt: string;
-  approver2Comment: string;
-  approver2Name: string;
+  approvers: Approver[];
   departmentName: string;
   note: string;
   userId: string;
@@ -42,7 +40,21 @@ export const ApprovalManagementForm = () => {
         }
         const data = await response.json();
         console.log("Fetched Data:", data);
-        setApprovals(data.leaveRequests.items);
+        // Transform the data to have approvers array
+        const transformedApprovals = data.leaveRequests.items.map((item: any) => {
+          const approvers: Approver[] = item.approvers.map((approver: any) => ({
+            approverId: approver.approverId,
+            approverStatus: approver.approverStatus,
+            approverApprovedAt: approver.approverApprovedAt,
+            approverComment: approver.approverComment,
+            approverName: approver.approverName,
+          }));
+          return {
+            ...item,
+            approvers,
+          };
+        });
+        setApprovals(transformedApprovals);
       } catch (error: any) {
         setError(error.message);
       } finally {
@@ -70,19 +82,6 @@ export const ApprovalManagementForm = () => {
   return (
     <div className="approval-page">
       <h1 className="approval-title">未承認リスト一覧</h1>
-      {/* <div className="filter-wrapper">
-        <label htmlFor="filter-select">申請種別で絞り込み:</label>
-        <select
-          id="filter-select"
-          className="filter-select"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-        >
-          <option value="">すべて</option>
-          <option value="休日申請">休日申請</option>
-          <option value="稟議申請">稟議申請</option>
-        </select>
-      </div> */}
       <div className="approval-list">
         {filteredApprovals?.map((approval) => (
           <div key={approval.requestId} className="approval-card">
@@ -108,58 +107,34 @@ export const ApprovalManagementForm = () => {
               <div><strong>申請する休日:</strong> {approval.type}</div>
               <div><strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}</div>
               <div><strong>申請日数:</strong> {approval.days} 日</div>
-              <div className="approver">
-                <div><strong>承認者1</strong></div>
-                <div className="approver-status-icon">
-                  <span>
-                    {approval.approver1Status === "承認待ち" && "⏳"}
-                    {approval.approver1Status === "承認済み" && "✔️"}
-                    {approval.approver1Status === "否決" && "❌"}
-                  </span>
-                  <span>{approval.approver1Name}</span>
+              {approval.approvers.map((approver, index) => (
+                <div className="approver" key={approver.approverId}>
+                  <div><strong>承認者{index + 1}</strong></div>
+                  <div className="approver-status-icon">
+                    <span>
+                      {approver.approverStatus === "承認待ち" && "⏳"}
+                      {approver.approverStatus === "承認済み" && "✔️"}
+                      {approver.approverStatus === "否決" && "❌"}
+                    </span>
+                    <span>{approver.approverName}</span>
+                  </div>
+                  <div className="approver-status">{approver.approverStatus}</div>
+                  <div>{approver.approverComment || "ー"}</div>
+                  {approver.approverStatus !== "承認待ち" && approver.approverApprovedAt && (
+                    <div>
+                      <strong>承認日時:</strong>
+                      {new Date(approver.approverApprovedAt)
+                        .toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
+                    </div>
+                  )}
+                  {approver.approverStatus === "承認待ち" && (
+                    <div className="button-container">
+                      <button className="reject-btn">否決</button>
+                      <button className="approve-btn">承認</button>
+                    </div>
+                  )}
                 </div>
-                <div className="approver-status">{approval.approver1Status}</div>
-                <div>{approval.approver1Comment || "ー"}</div>
-                {approval.approver1Status !== "承認待ち" && approval.approver1ApprovedAt && (
-                  <div>
-                    <strong>承認日時:</strong>
-                    {new Date(approval.approver1ApprovedAt)
-                      .toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
-                  </div>
-                )}
-                {approval.approver1Status === "承認待ち" && (
-                  <div className="button-container">
-                    <button className="reject-btn">否決</button>
-                    <button className="approve-btn">承認</button>
-                  </div>
-                )}
-              </div>
-              <div className="approver">
-                <div><strong>承認者2</strong></div>
-                <div className="approver-status-icon">
-                  <span>
-                    {approval.approver2Status === "承認待ち" && "⏳"}
-                    {approval.approver2Status === "承認済み" && "✔️"}
-                    {approval.approver2Status === "否決" && "❌"}
-                  </span>
-                  <span>{approval.approver2Name}</span>
-                </div>
-                <div className="approver-status">{approval.approver2Status}</div>
-                <div>{approval.approver2Comment || "ー"}</div>
-                {approval.approver2Status !== "承認待ち" && approval.approver2ApprovedAt && (
-                  <div>
-                    <strong>承認日時:</strong>
-                    {new Date(approval.approver2ApprovedAt)
-                      .toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
-                  </div>
-                )}
-                {approval.approver2Status === "承認待ち" && (
-                  <div className="button-container">
-                    <button className="reject-btn">否決</button>
-                    <button className="approve-btn">承認</button>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           </div>
         ))}

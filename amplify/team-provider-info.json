@@ -15,7 +15,11 @@
       "function": {
         "fetchPendingRequests": {
           "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",
-          "s3Key": "amplify-builds/fetchPendingRequests-416c31487333556c5270-build.zip"
+          "s3Key": "amplify-builds/fetchPendingRequests-4c6368687167574d2b4b-build.zip"
+        },
+        "handleApprovalReject": {
+          "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",
+          "s3Key": "amplify-builds/handleApprovalReject-41624932416457723052-build.zip"
         }
       }
     }

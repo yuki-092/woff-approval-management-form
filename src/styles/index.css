@@ -238,13 +238,16 @@
   }
 /* Centered loading spinner */
 .loader {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #ae1d23;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;  /* 幅を調整 */
+  height: 50px; /* 高さを調整 */
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db;
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
+  animation: spin 2s linear infinite;
 }
 
 @keyframes spin {

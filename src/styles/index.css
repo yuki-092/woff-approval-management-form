@@ -274,14 +274,14 @@
 }
 
 .loader {
-  border: 8px solid #ae1d23;
-  border-top: 6px solid #ae1d23;
+  border: 8px solid #f3f3f3; /* 背景色（白） */
+  border-top: 8px solid #ae1d23; /* メインカラーの赤色 */
   border-radius: 50%;
   width: 60px;
   height: 60px;
   animation: spin 1s linear infinite;
   margin: 20px auto; /* 横方向に中央寄せ */
-  display: block; /* ブロック要素として表示 *
+  display: block; /* ブロック要素として表示 */
 }
 
 @keyframes spin {

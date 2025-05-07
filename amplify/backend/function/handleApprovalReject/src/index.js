@@ -52,8 +52,20 @@ const getAccessToken = async () => {
 };
 
 exports.handler = async (event) => {
-    console.log("Received event:", JSON.stringify(event, null, 2));
     try {
+        console.log("Received event:", JSON.stringify(event, null, 2));
+        if (event.requestContext?.http?.method === "OPTIONS") {
+            return {
+              statusCode: 200,
+              headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+              },
+              body: JSON.stringify({ message: "CORSプリフライト通過" }),
+            };
+          }
+
         if (!event.body) {
             throw new Error("Request body is missing.");
         }
@@ -71,24 +83,26 @@ exports.handler = async (event) => {
         const params = {
             TableName: "LeaveRequests",
             Key: {
-                "requestId": "25c6a2d2-f4e0-40ef-b650-de2ab7542d5f"  // プライマリキー
+                "requestId": requestId // Use the provided requestId dynamically
             },
             ExpressionAttributeNames: {
-                "#status": "approver1Status",  // フィールド名をエスケープ
-                "#approvedAt": "approver1ApprovedAt",  // 同様にエスケープ
-                "#comment": "approver1Comment"  // コメントフィールドもエスケープ
+                "#status": `approver${approverNumber}Status`,  // Dynamic approver status
+                "#approvedAt": `approver${approverNumber}ApprovedAt` // Dynamic approved date
             },
             ExpressionAttributeValues: {
-                ":status": "承認",  // 承認ステータス
-                ":approvedAt": approvedAt,  // 承認日時
-                ":comment": commentValue // コメント内容
+                ":status": status,  // Update with the provided status
+                ":approvedAt": approvedAt  // Approved date
             },
-            UpdateExpression: "SET #status = :status, #approvedAt = :approvedAt" + 
-                              (approverComment ? ", #comment = :comment" : ""), // コメントがあれば更新
-            ConditionExpression: "attribute_exists(requestId)",  // requestIdが存在する場合のみ更新
+            UpdateExpression: `SET #status = :status, #approvedAt = :approvedAt`,
+            ConditionExpression: "attribute_exists(requestId)",  // Only update if requestId exists
             ReturnValues: "UPDATED_NEW"
         };
-        
+
+        if (approverComment) {
+            params.ExpressionAttributeValues[":comment"] = commentValue;
+            params.ExpressionAttributeNames["#comment"] = `approver${approverNumber}Comment`; // Dynamic comment field
+            params.UpdateExpression += `, #comment = :comment`;
+        }
 
         console.log("Updating DynamoDB with params:", params);
         await dynamoDb.update(params).promise();
@@ -118,8 +132,10 @@ exports.handler = async (event) => {
               },
             body: JSON.stringify({ message: 'Status updated successfully!' }),
         };
+    
     } catch (error) {
         console.error("Error:", error);
+ 
         return {
             statusCode: 500,
             headers: {
@@ -150,7 +166,7 @@ async function sendRejectionNotificationToApplicant(userId, type, approverName, 
             }
         }
 
-        console.log("Sending rejection notification to applicant:", message);
+        console.log("Sending rejection notification to applicant:", messageData);
 
         const response = await axios.post(apiUrl, messageData, {
             headers: {

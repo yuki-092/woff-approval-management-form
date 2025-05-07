@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
 // Define the types for approver and approval data
 type Approver = {
@@ -23,7 +24,9 @@ type ApprovalData = {
   userId: string;
 };
 
+
 export const ApprovalManagementForm = () => {
+  const navigate = useNavigate();
   const [approvals, setApprovals] = useState<ApprovalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +99,8 @@ export const ApprovalManagementForm = () => {
           const result = await response.json();
           console.log("Approval/Rejection processed successfully!", result);
 
-        if (approvals.length === approvalData.approverNumber && approvalData.type === "承認") {
-          alert("${approvalData.type}が完了しました。");
-        } else if((approvals.length === approvalData.approverNumber && approvalData.type === "否決")){
-          alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
-        } else if (approvals.length > approvalData.approverNumber && approvalData.type === "承認"){
-          alert("${approvalData.type}が完了しました。次の申請者に通知を送信しました。");
-        } else if (approvals.length > approvalData.approverNumber && approvalData.type === "否決"){
-          alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
-        }
-
+          // 承認処理が完了した後に complete page に遷移
+          navigate("/complete");
       } 
     } catch (error) {
       console.error("Error calling Lambda:", error);
@@ -118,7 +113,13 @@ export const ApprovalManagementForm = () => {
   const filteredApprovals = approvals;
 
   if (loading) {
-    return <div className="loader"></div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-overlay">
+          <div className="loader"></div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

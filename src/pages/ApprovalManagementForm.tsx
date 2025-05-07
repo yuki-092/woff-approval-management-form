@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 
+// Define the types for approver and approval data
 type Approver = {
   approverId: string;
   approverStatus: string;
@@ -14,7 +15,7 @@ type ApprovalData = {
   startDate: string;
   endDate: string;
   type: string;
-  days: number; 
+  days: number;
   displayName: string;
   approvers: Approver[];
   departmentName: string;
@@ -24,12 +25,10 @@ type ApprovalData = {
 
 export const ApprovalManagementForm = () => {
   const [approvals, setApprovals] = useState<ApprovalData[]>([]);
-  const [filterType, setFilterType] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // データを取得する関数
     const fetchData = async () => {
       try {
         const response = await fetch(
@@ -40,7 +39,6 @@ export const ApprovalManagementForm = () => {
         }
         const data = await response.json();
         console.log("Fetched Data:", data);
-        // Transform the data to have approvers array
         const transformedApprovals = data.leaveRequests.items.map((item: any) => {
           const approvers: Approver[] = item.approvers.map((approver: any) => ({
             approverId: approver.approverId,
@@ -65,14 +63,62 @@ export const ApprovalManagementForm = () => {
     fetchData();
   }, []);
 
-  const filteredApprovals = filterType
-    ? approvals.filter((approval) => approval.type === filterType)
-    : approvals;
+  const handleApprovalReject = async (approvalData: any) => {
+    console.log("Approval Data:", approvalData);
+    setLoading(true);
+
+    // ペイロードを準備
+    const payload = {
+      requestId: approvalData.requestId,
+      approverNumber: approvalData.approverNumber,
+      approverName: approvalData.approverName,
+      nextApproverId: approvalData.nextApproverId,
+      status: approvalData.status,
+      userId: approvalData.userId,
+      displayName: approvalData.displayName,
+      type: approvalData.type,
+      approverComment: approvalData.approverComment || "",  // コメントが無い場合は空文字
+    };
+
+    try {
+      const response = await fetch(
+        "https://zrhl6xn4r4z2crfbb34pq5zohe0hdxgd.lambda-url.ap-northeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Approval/Rejection processed successfully!", result);
+
+        if (approvalData.approvers.length === approvalData.approverNumber && approvalData.type === "承認") {
+          alert("${approvalData.type}が完了しました。");
+        } else if((approvalData.approvers.length === approvalData.approverNumber && approvalData.type === "否決")){
+          alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
+        } else if (approvalData.approvers.length > approvalData.approverNumber && approvalData.type === "承認"){
+          alert("${approvalData.type}が完了しました。次の申請者に通知を送信しました。");
+        } else if (approvalData.approvers.length > approvalData.approverNumber && approvalData.type === "否決"){
+          alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
+        }
+        
+      } 
+    } catch (error) {
+      console.error("Error calling Lambda:", error);
+      alert('送信中にエラーが発生しました。')
+    } finally{
+      setLoading(false);
+    }
+  };
+
+  const filteredApprovals = approvals;
 
   if (loading) {
-    return (
-      <div className="loader"></div> // ぐるぐるローディングインジケータを表示
-    );
+    return <div className="loader"></div>;
   }
 
   if (error) {
@@ -89,27 +135,39 @@ export const ApprovalManagementForm = () => {
               <div className="approval-header-top">
                 <span className="badge">休暇申請</span>
                 <div className="approval-date">
-                 申請日時: {new Date(approval.submittedAt)
-                    .toLocaleString('ja-JP', {
-                      timeZone: 'Asia/Tokyo',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                  申請日時:{" "}
+                  {new Date(approval.submittedAt)
+                    .toLocaleString("ja-JP", {
+                      timeZone: "Asia/Tokyo",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })
-                    .replace(',', '')}
+                    .replace(",", "")}
                 </div>
               </div>
             </div>
             <div className="approval-body">
-              <div><strong>申請者:</strong> {approval.displayName}</div>
-              <div><strong>申請する休日:</strong> {approval.type}</div>
-              <div><strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}</div>
-              <div><strong>申請日数:</strong> {approval.days} 日</div>
+              <div>
+                <strong>申請者:</strong> {approval.displayName}
+              </div>
+              <div>
+                <strong>申請する休日:</strong> {approval.type}
+              </div>
+              <div>
+                <strong>申請期間:</strong> {approval.startDate} 〜{" "}
+                {approval.endDate}
+              </div>
+              <div>
+                <strong>申請日数:</strong> {approval.days} 日
+              </div>
               {approval.approvers.map((approver, index) => (
-                <div className="approver" key={approver.approverId}>
-                  <div><strong>承認者{index + 1}</strong></div>
+                <div key={`${index}-${approver.approverId}`} className="approver">
+                  <div>
+                    <strong>承認者{index + 1}</strong>
+                  </div>
                   <div className="approver-status-icon">
                     <span>
                       {approver.approverStatus === "承認待ち" && "⏳"}
@@ -124,13 +182,43 @@ export const ApprovalManagementForm = () => {
                     <div>
                       <strong>承認日時:</strong>
                       {new Date(approver.approverApprovedAt)
-                        .toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
+                        .toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
                     </div>
                   )}
                   {approver.approverStatus === "承認待ち" && (
                     <div className="button-container">
-                      <button className="reject-btn">否決</button>
-                      <button className="approve-btn">承認</button>
+                      <button
+                        className="reject-btn"
+                        onClick={() => handleApprovalReject({
+                          requestId: approval.requestId,
+                          approverNumber: index + 1,
+                          approverName: approver.approverName,
+                          nextApproverId: approval.approvers[index + 1]?.approverId,
+                          status: "否決",
+                          userId: approval.userId,
+                          displayName: approval.displayName,
+                          type: approval.type,
+                          approverComment: approver.approverComment,
+                        })}
+                      >
+                        否決
+                      </button>
+                      <button
+                        className="approve-btn"
+                        onClick={() => handleApprovalReject({
+                          requestId: approval.requestId,
+                          approverNumber: index + 1,
+                          approverName: approver.approverName,
+                          nextApproverId: approval.approvers[index + 1]?.approverId,
+                          status: "承認",
+                          userId: approval.userId,
+                          displayName: approval.displayName,
+                          type: approval.type,
+                          approverComment: approver.approverComment,
+                        })}
+                      >
+                        承認
+                      </button>
                     </div>
                   )}
                 </div>

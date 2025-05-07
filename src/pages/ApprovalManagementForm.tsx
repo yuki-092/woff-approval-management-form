@@ -96,16 +96,16 @@ export const ApprovalManagementForm = () => {
           const result = await response.json();
           console.log("Approval/Rejection processed successfully!", result);
 
-        if (approvalData.approvers.length === approvalData.approverNumber && approvalData.type === "承認") {
+        if (approvals.length === approvalData.approverNumber && approvalData.type === "承認") {
           alert("${approvalData.type}が完了しました。");
-        } else if((approvalData.approvers.length === approvalData.approverNumber && approvalData.type === "否決")){
+        } else if((approvals.length === approvalData.approverNumber && approvalData.type === "否決")){
           alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
-        } else if (approvalData.approvers.length > approvalData.approverNumber && approvalData.type === "承認"){
+        } else if (approvals.length > approvalData.approverNumber && approvalData.type === "承認"){
           alert("${approvalData.type}が完了しました。次の申請者に通知を送信しました。");
-        } else if (approvalData.approvers.length > approvalData.approverNumber && approvalData.type === "否決"){
+        } else if (approvals.length > approvalData.approverNumber && approvalData.type === "否決"){
           alert("${approvalData.type}が完了しました。申請者に否決通知を送信しました。");
         }
-        
+
       } 
     } catch (error) {
       console.error("Error calling Lambda:", error);

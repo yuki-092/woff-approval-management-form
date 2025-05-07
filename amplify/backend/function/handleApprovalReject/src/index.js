@@ -1,10 +1,11 @@
 const axios = require('axios');
 const AWS = require('aws-sdk');
+const jwt = require('jsonwebtoken');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 
 // JWT生成用関数（LINE WORKSのサービスアカウント証明書を利用）
-const getAccessToken = () => {
+const generateJWT = () => {
     const now = Math.floor(Date.now() / 1000);
     const payload = {
       iss: process.env.CLIENT_ID,
@@ -18,89 +19,178 @@ const getAccessToken = () => {
     return token
   };
 
-exports.handler = async (event) => {
-    const { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment } = JSON.parse(event.body);
-    console.log("Received approval request:", { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment });  // Log the incoming request
-
-    const params = {
-        TableName: "LeaveRequests",
-        Key: {
-            "requestId": requestId,
-        },
-        UpdateExpression: `set approver${approverNumber}Status = :status, approver${approverNumber}ApprovedAt = :approvedAt, approver${approverNumber}Comment = :comment`,
-        ExpressionAttributeValues: {
-            [`:approver${approverNumber}Status`]: status,
-            [`:approver${approverNumber}ApprovedAt`]: new Date().toISOString(),
-            [`:approver${approverNumber}Comment`]: approverComment
-        },
-        ReturnValues: "UPDATED_NEW",
-    };
-
+// JWT generation function for LINE WORKS service account
+const getAccessToken = async () => {
     try {
+
+        console.log("start: 承認者1に通知送信");
+        // JWT生成
+        const assertion = generateJWT();
+    
+        // アクセストークン取得
+        const params = new URLSearchParams();
+        params.append('assertion', assertion);
+        params.append('grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
+        params.append('client_id', process.env.CLIENT_ID);
+        params.append('client_secret', process.env.CLIENT_SECRET);
+        params.append('scope', 'bot');
+    
+        const tokenRes = await axios.post(
+          'https://auth.worksmobile.com/oauth2/v2.0/token',
+          params,
+          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        if (!tokenRes.data.access_token) {
+          throw new Error('アクセストークンが取得できませんでした');
+        }
+        const accessToken = tokenRes.data.access_token;
+        console.log("アクセストークン取得成功:", accessToken);
+        return accessToken;
+    }catch (error) {
+        console.error("通知送信エラー:", error);
+      }
+};
+
+exports.handler = async (event) => {
+    console.log("Received event:", JSON.stringify(event, null, 2));
+    try {
+        if (!event.body) {
+            throw new Error("Request body is missing.");
+        }
+
+        const { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment } = JSON.parse(event.body);
+
+        console.log("Received approval request:", { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment });
+
+        // If approverComment is null or undefined, use an empty string to avoid errors in the UpdateExpression
+        const commentValue = approverComment || "";
+
+        // Define the approvedAt date
+        const approvedAt = new Date().toISOString();
+
+        const params = {
+            TableName: "LeaveRequests",
+            Key: {
+                "requestId": "25c6a2d2-f4e0-40ef-b650-de2ab7542d5f"  // プライマリキー
+            },
+            ExpressionAttributeNames: {
+                "#status": "approver1Status",  // フィールド名をエスケープ
+                "#approvedAt": "approver1ApprovedAt",  // 同様にエスケープ
+                "#comment": "approver1Comment"  // コメントフィールドもエスケープ
+            },
+            ExpressionAttributeValues: {
+                ":status": "承認",  // 承認ステータス
+                ":approvedAt": approvedAt,  // 承認日時
+                ":comment": commentValue // コメント内容
+            },
+            UpdateExpression: "SET #status = :status, #approvedAt = :approvedAt" + 
+                              (approverComment ? ", #comment = :comment" : ""), // コメントがあれば更新
+            ConditionExpression: "attribute_exists(requestId)",  // requestIdが存在する場合のみ更新
+            ReturnValues: "UPDATED_NEW"
+        };
+        
+
         console.log("Updating DynamoDB with params:", params);
         await dynamoDb.update(params).promise();
         console.log("DynamoDB update successful");
 
-        // Handle approval flow
+        // Handle status updates based on the approval status
         if (status === "承認") {
             if (nextApproverId) {
                 console.log("Status is approved, sending notification to next approver");
-                const accessToken = await getAccessToken();  // Access Tokenを取得
+                const accessToken = await getAccessToken();
                 await sendNotificationToNextApprover(nextApproverId, displayName, type, accessToken);
             } else {
                 console.log("Final approver, no further approver");
-                // Optional: Add any final approval flow logic here if needed
             }
         } else if (status === "否決") {
             console.log("Status is rejected, sending rejection notification to applicant");
-            await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment);
+            const accessToken = await getAccessToken();
+            await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, accessToken);
         }
 
         return {
             statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+              },
             body: JSON.stringify({ message: 'Status updated successfully!' }),
         };
     } catch (error) {
-        console.error("Error updating DB:", error);
+        console.error("Error:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: 'Failed to update status' }),
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+              },
+            body: JSON.stringify({ message: 'Failed to update status', error: error.message }),
         };
     }
 };
 
-async function sendNotificationToNextApprover(nextApproverId, displayName, type, accessToken) {
-    const message = {
-        botNo: process.env.BOT_ID,
-        userId: nextApproverId,
-        content: `次の承認者です。申請内容を確認してください。\n申請者：${displayName}\n申請区分：${type}`,
-    };
+// 申請者への否決通知を送信
+async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, accessToken) {
 
-    console.log("Sending notification to next approver:", message);
     try {
-        await axios.post(`https://www.worksapis.com/v1.0/bots/${BOT_ID}/users/${nextApproverId}/messages`, message, {
+        // Lambda環境変数からBot番号を取得
+        const botId = process.env.BOT_ID;
+        const userId = userId; // 承認者のユーザーIDを指定
+
+        // メッセージ送信APIエンドポイント（正しいURLを使用）
+        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
+
+        const messageData = {
+            content: {
+                type: 'text',
+                text: `申請が否決されました。\n申請区分：${type}\n否決者：${approverName}\nコメント：${approverComment}`,
+            }
+        }
+
+        console.log("Sending rejection notification to applicant:", message);
+
+        const response = await axios.post(apiUrl, messageData, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
             }
         });
-        console.log("Notification sent to next approver");
+        console.log("Rejection notification sent to applicant", response.data);
     } catch (error) {
-        console.error("Error sending notification to next approver:", error);
+        console.error("Error sending rejection notification to applicant:", error);
     }
 }
 
-async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment) {
-    const message = {
-        botNo: process.env.BOT_ID,
-        userId: userId,
-        content: `申請が否決されました。\n申請区分：${type}\n否決者：${approverName}\nコメント：${approverComment}`,
-    };
-
-    console.log("Sending rejection notification to applicant:", message);
+// 次の承認者への通知を送信
+async function sendNotificationToNextApprover(nextApproverId, displayName, type, accessToken) {
     try {
-        await axios.post(`https://www.worksapis.com/v1.0/bots/${BOT_ID}/users/${userId}/messages`, message);
-        console.log("Rejection notification sent to applicant");
+        // Lambda環境変数からBot番号を取得
+        const botId = process.env.BOT_ID;
+        const userId = nextApproverId; // 承認者のユーザーIDを指定
+
+        // メッセージ送信APIエンドポイント（正しいURLを使用）
+        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
+
+        const messageData = {
+            content: {
+                type: 'text',
+                text: `次の承認者です。申請内容を確認してください。\n申請者：${displayName}\n申請区分：${type}`,
+            }
+        }
+
+        console.log("Sending notification to next approver:", messageData);
+
+        const response = await axios.post(apiUrl, messageData, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            }
+        });
+        console.log("通知送信成功:", response.data);
     } catch (error) {
-        console.error("Error sending rejection notification to applicant:", error);
+        console.error("Error sending notification to next approver:", error);
     }
 }

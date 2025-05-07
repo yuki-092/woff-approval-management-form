@@ -116,6 +116,8 @@ exports.handler = async (event) => {
                 await sendNotificationToNextApprover(nextApproverId, displayName, type, accessToken);
             } else {
                 console.log("Final approver, no further approver");
+                const accessToken = await getAccessToken();
+                await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, accessToken);
             }
         } else if (status === "否決") {
             console.log("Status is rejected, sending rejection notification to applicant");
@@ -152,12 +154,13 @@ exports.handler = async (event) => {
 async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, accessToken) {
 
     try {
+        console.log("申請やへ否決通知を送信")
         // Lambda環境変数からBot番号を取得
         const botId = process.env.BOT_ID;
-        const userId = userId; // 承認者のユーザーIDを指定
+        const recieverId = userId; // 承認者のユーザーIDを指定
 
         // メッセージ送信APIエンドポイント（正しいURLを使用）
-        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
+        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${recieverId}/messages`;
 
         const messageData = {
             content: {
@@ -183,12 +186,13 @@ async function sendRejectionNotificationToApplicant(userId, type, approverName, 
 // 次の承認者への通知を送信
 async function sendNotificationToNextApprover(nextApproverId, displayName, type, accessToken) {
     try {
+        console.log("次の承認者への通知を送信")
         // Lambda環境変数からBot番号を取得
         const botId = process.env.BOT_ID;
-        const userId = nextApproverId; // 承認者のユーザーIDを指定
+        const recieverId = nextApproverId; // 承認者のユーザーIDを指定
 
         // メッセージ送信APIエンドポイント（正しいURLを使用）
-        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
+        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${recieverId}/messages`;
 
         const messageData = {
             content: {
@@ -208,5 +212,39 @@ async function sendNotificationToNextApprover(nextApproverId, displayName, type,
         console.log("通知送信成功:", response.data);
     } catch (error) {
         console.error("Error sending notification to next approver:", error);
+    }
+}
+
+// 申請者への承認完了通知
+async function sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, accessToken) {
+
+    try {
+        console.log("申請者への承認完了通知")
+        // Lambda環境変数からBot番号を取得
+        const botId = process.env.BOT_ID;
+        const recieverId = userId;
+
+        // メッセージ送信APIエンドポイント（正しいURLを使用）
+        const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${recieverId}/messages`;
+
+        const messageData = {
+            content: {
+                type: 'text',
+                text: `申請が最終承認されました。\n申請区分：${type}\n最終承認者：${approverName}\nコメント：${approverComment}`,
+            }
+        }
+    
+        console.log("Sending approved notification to applicant:", messageData);
+        const response = await axios.post(apiUrl, messageData, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            }
+        });
+
+
+        console.log("Approved notification sent to applicant", response.data);
+    } catch (error) {
+        console.error("Error sending approved notification to applicant:", error);
     }
 }

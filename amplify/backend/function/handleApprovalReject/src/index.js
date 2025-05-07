@@ -23,7 +23,7 @@ const generateJWT = () => {
 const getAccessToken = async () => {
     try {
 
-        console.log("start: 承認者1に通知送信");
+        console.log("start: アクセストークン作成");
         // JWT生成
         const assertion = generateJWT();
     

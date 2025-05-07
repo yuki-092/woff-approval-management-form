@@ -144,7 +144,15 @@ type ApprovalItemProps = {
 };
 
 const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }) => {
-  const [comment, setComment] = useState("");
+  // 各承認者のコメントを保持するstateを定義
+  const [comments, setComments] = useState<{ [key: number]: string }>({});
+
+  const handleCommentChange = (index: number, value: string) => {
+    setComments((prev) => ({
+      ...prev,
+      [index]: value, // 指定したindexのコメントを更新
+    }));
+  };
 
   return (
     <div className="approval-card">
@@ -194,7 +202,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
               <span>{approver.approverName}</span>
             </div>
             <div className="approver-status">{approver.approverStatus}</div>
-            {approver.approverStatus !== "承認" && (
+            {approver.approverStatus === "承認" && (
               <div>{approver.approverComment || "コメントなし"}</div>
             )}
             {approver.approverStatus !== "承認待ち" && approver.approverApprovedAt && (
@@ -210,8 +218,8 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
                   <textarea
                     id={`approver-comment-${index}`}
                     placeholder="コメント（任意）"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
+                    value={comments[index] || ""} // 対応する承認者のコメントを表示
+                    onChange={(e) => handleCommentChange(index, e.target.value)} // コメントを更新
                     rows={4}
                   />
                 </div>
@@ -227,7 +235,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
                       userId: approval.userId,
                       displayName: approval.displayName,
                       type: approval.type,
-                      approverComment: comment,
+                      approverComment: comments[index] || "", // 各承認者のコメントを送信
                     })}
                   >
                     否決
@@ -243,7 +251,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
                       userId: approval.userId,
                       displayName: approval.displayName,
                       type: approval.type,
-                      approverComment: comment,
+                      approverComment: comments[index] || "", // 各承認者のコメントを送信
                     })}
                   >
                     承認

@@ -131,100 +131,126 @@ export const ApprovalManagementForm = () => {
       <h1 className="approval-title">未承認リスト一覧</h1>
       <div className="approval-list">
         {filteredApprovals?.map((approval) => (
-          <div key={approval.requestId} className="approval-card">
-            <div className="approval-header">
-              <div className="approval-header-top">
-                <span className="badge">休暇申請</span>
-                <div className="approval-date">
-                  申請日時:{" "}
-                  {new Date(approval.submittedAt)
-                    .toLocaleString("ja-JP", {
-                      timeZone: "Asia/Tokyo",
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                    .replace(",", "")}
-                </div>
-              </div>
+          <ApprovalItem key={approval.requestId} approval={approval} onApproveReject={handleApprovalReject} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+type ApprovalItemProps = {
+  approval: ApprovalData;
+  onApproveReject: (approvalData: any) => void;
+};
+
+const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }) => {
+  const [comment, setComment] = useState("");
+
+  return (
+    <div className="approval-card">
+      <div className="approval-header">
+        <div className="approval-header-top">
+          <span className="badge">休暇申請</span>
+          <div className="approval-date">
+            申請日時:{" "}
+            {new Date(approval.submittedAt)
+              .toLocaleString("ja-JP", {
+                timeZone: "Asia/Tokyo",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+              .replace(",", "")}
+          </div>
+        </div>
+      </div>
+      <div className="approval-body">
+        <div>
+          <strong>申請者:</strong> {approval.displayName}
+        </div>
+        <div>
+          <strong>申請する休日:</strong> {approval.type}
+        </div>
+        <div>
+          <strong>申請期間:</strong> {approval.startDate} 〜{" "}
+          {approval.endDate}
+        </div>
+        <div>
+          <strong>申請日数:</strong> {approval.days} 日
+        </div>
+        {approval.approvers.map((approver, index) => (
+          <div key={`${index}-${approver.approverId}`} className="approver">
+            <div>
+              <strong>承認者{index + 1}</strong>
             </div>
-            <div className="approval-body">
-              <div>
-                <strong>申請者:</strong> {approval.displayName}
-              </div>
-              <div>
-                <strong>申請する休日:</strong> {approval.type}
-              </div>
-              <div>
-                <strong>申請期間:</strong> {approval.startDate} 〜{" "}
-                {approval.endDate}
-              </div>
-              <div>
-                <strong>申請日数:</strong> {approval.days} 日
-              </div>
-              {approval.approvers.map((approver, index) => (
-                <div key={`${index}-${approver.approverId}`} className="approver">
-                  <div>
-                    <strong>承認者{index + 1}</strong>
-                  </div>
-                  <div className="approver-status-icon">
-                    <span>
-                      {approver.approverStatus === "承認待ち" && "⏳"}
-                      {approver.approverStatus === "承認済み" && "✔️"}
-                      {approver.approverStatus === "否決" && "❌"}
-                    </span>
-                    <span>{approver.approverName}</span>
-                  </div>
-                  <div className="approver-status">{approver.approverStatus}</div>
-                  <div>{approver.approverComment || "ー"}</div>
-                  {approver.approverStatus !== "承認待ち" && approver.approverApprovedAt && (
-                    <div>
-                      <strong>承認日時:</strong>
-                      {new Date(approver.approverApprovedAt)
-                        .toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-                    </div>
-                  )}
-                  {approver.approverStatus === "承認待ち" && (
-                    <div className="button-container">
-                      <button
-                        className="reject-btn"
-                        onClick={() => handleApprovalReject({
-                          requestId: approval.requestId,
-                          approverNumber: index + 1,
-                          approverName: approver.approverName,
-                          nextApproverId: approval.approvers[index + 1]?.approverId,
-                          status: "否決",
-                          userId: approval.userId,
-                          displayName: approval.displayName,
-                          type: approval.type,
-                          approverComment: approver.approverComment,
-                        })}
-                      >
-                        否決
-                      </button>
-                      <button
-                        className="approve-btn"
-                        onClick={() => handleApprovalReject({
-                          requestId: approval.requestId,
-                          approverNumber: index + 1,
-                          approverName: approver.approverName,
-                          nextApproverId: approval.approvers[index + 1]?.approverId,
-                          status: "承認",
-                          userId: approval.userId,
-                          displayName: approval.displayName,
-                          type: approval.type,
-                          approverComment: approver.approverComment,
-                        })}
-                      >
-                        承認
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="approver-status-icon">
+              <span>
+                {approver.approverStatus === "承認待ち" && "⏳"}
+                {approver.approverStatus === "承認" && "✔️"}
+                {approver.approverStatus === "否決" && "❌"}
+              </span>
+              <span>{approver.approverName}</span>
             </div>
+            <div className="approver-status">{approver.approverStatus}</div>
+            {approver.approverStatus !== "承認" && (
+              <div>{approver.approverComment || "コメントなし"}</div>
+            )}
+            {approver.approverStatus !== "承認待ち" && approver.approverApprovedAt && (
+              <div>
+                <strong>承認日時:</strong>
+                {new Date(approver.approverApprovedAt)
+                  .toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
+              </div>
+            )}
+            {approver.approverStatus === "承認待ち" && (
+              <>
+                <div className="comment-input-container">
+                  <textarea
+                    id={`approver-comment-${index}`}
+                    placeholder="コメント（任意）"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <div className="approval-buttons">
+                  <button
+                    className="reject-btn"
+                    onClick={() => onApproveReject({
+                      requestId: approval.requestId,
+                      approverNumber: index + 1,
+                      approverName: approver.approverName,
+                      nextApproverId: approval.approvers[index + 1]?.approverId,
+                      status: "否決",
+                      userId: approval.userId,
+                      displayName: approval.displayName,
+                      type: approval.type,
+                      approverComment: comment,
+                    })}
+                  >
+                    否決
+                  </button>
+                  <button
+                    className="approve-btn"
+                    onClick={() => onApproveReject({
+                      requestId: approval.requestId,
+                      approverNumber: index + 1,
+                      approverName: approver.approverName,
+                      nextApproverId: approval.approvers[index + 1]?.approverId,
+                      status: "承認",
+                      userId: approval.userId,
+                      displayName: approval.displayName,
+                      type: approval.type,
+                      approverComment: comment,
+                    })}
+                  >
+                    承認
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>

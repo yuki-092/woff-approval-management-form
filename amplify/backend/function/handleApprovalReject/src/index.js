@@ -117,12 +117,12 @@ exports.handler = async (event) => {
             } else {
                 console.log("Final approver, no further approver");
                 const accessToken = await getAccessToken();
-                await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, accessToken);
+                await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName, accessToken);
             }
         } else if (status === "否決") {
             console.log("Status is rejected, sending rejection notification to applicant");
             const accessToken = await getAccessToken();
-            await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, accessToken);
+            await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName, accessToken);
         }
 
         return {
@@ -151,7 +151,7 @@ exports.handler = async (event) => {
 };
 
 // 申請者への否決通知を送信
-async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, accessToken) {
+async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName, accessToken) {
 
     try {
         console.log("申請やへ否決通知を送信")
@@ -165,7 +165,7 @@ async function sendRejectionNotificationToApplicant(userId, type, approverName, 
         const messageData = {
             content: {
                 type: 'text',
-                text: `申請が否決されました。\n申請区分：${type}\n否決者：${approverName}\nコメント：${approverComment}`,
+                text: `申請が否決されました。\n申請者：${displayName}\n申請区分：${type}\n否決者：${approverName}\nコメント：${approverComment}`,
             }
         }
 
@@ -216,7 +216,7 @@ async function sendNotificationToNextApprover(nextApproverId, displayName, type,
 }
 
 // 申請者への承認完了通知
-async function sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, accessToken) {
+async function sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName, accessToken) {
 
     try {
         console.log("申請者への承認完了通知")
@@ -230,7 +230,7 @@ async function sendApprovedNotificationToApplicant(userId, type, approverName, a
         const messageData = {
             content: {
                 type: 'text',
-                text: `申請が最終承認されました。\n申請区分：${type}\n最終承認者：${approverName}\nコメント：${approverComment}`,
+                text: `申請が最終承認されました。\n申請者：${displayName}\n申請区分：${type}\n最終承認者：${approverName}\nコメント：${approverComment}`,
             }
         }
     

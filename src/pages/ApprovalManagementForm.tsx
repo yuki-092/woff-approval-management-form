@@ -50,7 +50,6 @@ export const ApprovalManagementForm = () => {
           ...(data.leaveRequests?.items || []),
           ...(data.ringiRequests?.items || [])
         ]
-          .filter((item: any) => item.type === '休暇申請' || item.type === '稟議申請')
           .map((item: any) => {
             const approvers: Approver[] = item.approvers.map((approver: any) => ({
               approverId: approver.approverId,
@@ -139,9 +138,13 @@ export const ApprovalManagementForm = () => {
     <div className="approval-page">
       <h1 className="approval-title">未承認リスト一覧</h1>
       <div className="approval-list">
-        {filteredApprovals?.map((approval) => (
-          <ApprovalItem key={approval.requestId} approval={approval} onApproveReject={handleApprovalReject} />
-        ))}
+        {filteredApprovals && filteredApprovals.length > 0 ? (
+          filteredApprovals.map((approval) => (
+            <ApprovalItem key={approval.requestId} approval={approval} onApproveReject={handleApprovalReject} />
+          ))
+        ) : (
+          <p>未承認リストはありません。</p>
+        )}
       </div>
     </div>
   );

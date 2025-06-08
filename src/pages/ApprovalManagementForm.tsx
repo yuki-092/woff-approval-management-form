@@ -24,8 +24,8 @@ type ApprovalData = {
   content?: string;
   userId: string;
   amount?: number;
-  attachmentFiles?: { fileName: string; fileUrl: string }[];
-  otherAttachmentFiles?: { fileName: string; fileUrl: string }[];
+  attachmentFiles?: string[];
+  otherAttachmentFiles?: string[];
 };
 
 
@@ -338,22 +338,29 @@ const ApprovalRingiItem: React.FC<ApprovalItemProps> = ({ approval, onApproveRej
           </div>
           <div>
             <strong>添付ファイル:</strong>
-            {approval.attachmentFiles?.map(file => (
-              <div key={file.fileName}>
-                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{file.fileName}</a>
-              </div>
-            ))}
-          </div>
-          <div>
-            <strong>その他添付ファイル:</strong>
-            {approval.otherAttachmentFiles?.map(file => {
-              const fileName = file.fileUrl.split('/').pop();
+            {approval.attachmentFiles?.map(file => {
+              const fileName = file.split('/').pop();
               return (
                 <div key={fileName}>
-                  <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{fileName}</a>
+                  <a href={file} target="_blank" rel="noopener noreferrer">{fileName}</a>
                 </div>
               );
             })}
+          </div>
+          <div>
+            <strong>その他添付ファイル:</strong>
+            {approval.otherAttachmentFiles && approval.otherAttachmentFiles.length > 0 ? (
+              approval.otherAttachmentFiles.map((file) => {
+                const fileName = file.split('/').pop();
+                return (
+                  <div key={fileName}>
+                    <a href={file} target="_blank" rel="noopener noreferrer">{fileName}</a>
+                  </div>
+                );
+              })
+            ) : (
+              <div>添付ファイルなし</div>
+            )}
           </div>
         </>
         {approval.approvers.map((approver, index) => (

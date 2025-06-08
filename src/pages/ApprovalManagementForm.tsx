@@ -334,23 +334,26 @@ const ApprovalRingiItem: React.FC<ApprovalItemProps> = ({ approval, onApproveRej
             <strong>内容:</strong> {approval.content}
           </div>
           <div>
-            <strong>金額:</strong> {approval.amount}
+            <strong>金額:</strong> {approval.amount?.toLocaleString("ja-JP", { style: "currency", currency: "JPY" })}
           </div>
           <div>
             <strong>添付ファイル:</strong>
             {approval.attachmentFiles?.map(file => (
-              <div key={file.fileUrl}>
+              <div key={file.fileName}>
                 <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{file.fileName}</a>
               </div>
             ))}
           </div>
           <div>
             <strong>その他添付ファイル:</strong>
-            {approval.otherAttachmentFiles?.map(file => (
-              <div key={file.fileUrl}>
-                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{file.fileName}</a>
-              </div>
-            ))}
+            {approval.otherAttachmentFiles?.map(file => {
+              const fileName = file.fileUrl.split('/').pop();
+              return (
+                <div key={fileName}>
+                  <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{fileName}</a>
+                </div>
+              );
+            })}
           </div>
         </>
         {approval.approvers.map((approver, index) => (

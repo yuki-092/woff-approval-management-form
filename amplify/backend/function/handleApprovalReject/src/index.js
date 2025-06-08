@@ -80,21 +80,23 @@ exports.handler = async (event) => {
         // Define the approvedAt date
         const approvedAt = new Date().toISOString();
 
+        const tableName = type === "稟議申請" ? "RingiRequests" : "LeaveRequests";
+
         const params = {
-            TableName: "LeaveRequests",
+            TableName: tableName,
             Key: {
-                "requestId": requestId // Use the provided requestId dynamically
+                "requestId": requestId
             },
             ExpressionAttributeNames: {
-                "#status": `approver${approverNumber}Status`,  // Dynamic approver status
-                "#approvedAt": `approver${approverNumber}ApprovedAt` // Dynamic approved date
+                "#status": `approver${approverNumber}Status`,
+                "#approvedAt": `approver${approverNumber}ApprovedAt`
             },
             ExpressionAttributeValues: {
-                ":status": status,  // Update with the provided status
-                ":approvedAt": approvedAt  // Approved date
+                ":status": status,
+                ":approvedAt": approvedAt
             },
             UpdateExpression: `SET #status = :status, #approvedAt = :approvedAt`,
-            ConditionExpression: "attribute_exists(requestId)",  // Only update if requestId exists
+            ConditionExpression: "attribute_exists(requestId)",
             ReturnValues: "UPDATED_NEW"
         };
 

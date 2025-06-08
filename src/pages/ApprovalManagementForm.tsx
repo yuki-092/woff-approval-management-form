@@ -83,7 +83,9 @@ export const ApprovalManagementForm = () => {
       status: approvalData.status,
       userId: approvalData.userId,
       displayName: approvalData.displayName,
-      type: approvalData.type,
+      type: leaveApprovals.some(item => item.requestId === approvalData.requestId) ? "休暇申請" :
+            ringiApprovals.some(item => item.requestId === approvalData.requestId) ? "稟議申請" :
+            "その他",
       approverComment: approvalData.approverComment || "",  // コメントが無い場合は空文字
     };
 

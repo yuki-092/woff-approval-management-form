@@ -46,21 +46,24 @@ export const ApprovalManagementForm = () => {
         }
         const data = await response.json();
         console.log("Fetched Data:", data);
-        const transformedApprovals = data.leaveRequests.items
+        const transformedApprovals = [
+          ...(data.leaveRequests?.items || []),
+          ...(data.ringiRequests?.items || [])
+        ]
           .filter((item: any) => item.type === '休暇申請' || item.type === '稟議申請')
           .map((item: any) => {
-          const approvers: Approver[] = item.approvers.map((approver: any) => ({
-            approverId: approver.approverId,
-            approverStatus: approver.approverStatus,
-            approverApprovedAt: approver.approverApprovedAt,
-            approverComment: approver.approverComment,
-            approverName: approver.approverName,
-          }));
-          return {
-            ...item,
-            approvers,
-          };
-        });
+            const approvers: Approver[] = item.approvers.map((approver: any) => ({
+              approverId: approver.approverId,
+              approverStatus: approver.approverStatus,
+              approverApprovedAt: approver.approverApprovedAt,
+              approverComment: approver.approverComment,
+              approverName: approver.approverName,
+            }));
+            return {
+              ...item,
+              approvers,
+            };
+          });
         setApprovals(transformedApprovals);
       } catch (error: any) {
         setError(error.message);

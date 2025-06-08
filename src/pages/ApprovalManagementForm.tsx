@@ -244,7 +244,7 @@ const ApprovalLeaveItem: React.FC<ApprovalItemProps> = ({ approval, onApproveRej
               <>
                 <div className="comment-input-container">
                   <textarea
-                    id={`approver-comment-${index}`}
+                    id={`approver-comment-${approval.requestId}-${index}`}
                     placeholder="コメント（任意）"
                     value={comments[index] || ""}
                     onChange={(e) => handleCommentChange(index, e.target.value)}
@@ -391,7 +391,7 @@ const ApprovalRingiItem: React.FC<ApprovalItemProps> = ({ approval, onApproveRej
               <>
                 <div className="comment-input-container">
                   <textarea
-                    id={`approver-comment-${index}`}
+                    id={`approver-comment-${approval.requestId}-${index}`}
                     placeholder="コメント（任意）"
                     value={comments[index] || ""}
                     onChange={(e) => handleCommentChange(index, e.target.value)}

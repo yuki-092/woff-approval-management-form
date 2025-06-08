@@ -64,6 +64,7 @@ export const ApprovalManagementForm = () => {
             };
           });
         setApprovals(transformedApprovals);
+        console.log("Transformed Approvals:", transformedApprovals);
       } catch (error: any) {
         setError(error.message);
       } finally {
@@ -119,6 +120,7 @@ export const ApprovalManagementForm = () => {
   };
 
   const filteredApprovals = approvals;
+  console.log("Filtered Approvals:", filteredApprovals);
 
   if (loading) {
     return (
@@ -171,7 +173,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
       <div className="approval-header">
         <div className="approval-header-top">
           <span className="badge">
-            {approval.type === "稟議申請" ? "稟議申請" : "休暇申請"}
+            {approval.type}
           </span>
           <div className="approval-date">
             申請日時:{" "}
@@ -207,7 +209,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
               <strong>内容:</strong> {approval.note}
             </div>
           </>
-        ) : (
+        ) : approval.type === "稟議申請" ? (
           <>
             <div>
               <strong>申請者:</strong> {approval.displayName}
@@ -235,7 +237,7 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
               ))}
             </div>
           </>
-        )}
+        ) : null}
         {approval.approvers.map((approver, index) => (
           <div key={`${index}-${approver.approverId}`} className="approver">
             <div>

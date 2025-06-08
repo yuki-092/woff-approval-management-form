@@ -21,7 +21,11 @@ type ApprovalData = {
   approvers: Approver[];
   departmentName: string;
   note: string;
+  content?: string;
   userId: string;
+  amount?: number;
+  attachmentFiles?: { fileName: string; fileUrl: string }[];
+  otherAttachmentFiles?: { fileName: string; fileUrl: string }[];
 };
 
 
@@ -42,7 +46,9 @@ export const ApprovalManagementForm = () => {
         }
         const data = await response.json();
         console.log("Fetched Data:", data);
-        const transformedApprovals = data.leaveRequests.items.map((item: any) => {
+        const transformedApprovals = data.leaveRequests.items
+          .filter((item: any) => item.type === '休暇申請' || item.type === '稟議申請')
+          .map((item: any) => {
           const approvers: Approver[] = item.approvers.map((approver: any) => ({
             approverId: approver.approverId,
             approverStatus: approver.approverStatus,
@@ -158,7 +164,9 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
     <div className="approval-card">
       <div className="approval-header">
         <div className="approval-header-top">
-          <span className="badge">休暇申請</span>
+          <span className="badge">
+            {approval.type === "稟議申請" ? "稟議申請" : "休暇申請"}
+          </span>
           <div className="approval-date">
             申請日時:{" "}
             {new Date(approval.submittedAt)
@@ -175,19 +183,53 @@ const ApprovalItem: React.FC<ApprovalItemProps> = ({ approval, onApproveReject }
         </div>
       </div>
       <div className="approval-body">
-        <div>
-          <strong>申請者:</strong> {approval.displayName}
-        </div>
-        <div>
-          <strong>申請する休日:</strong> {approval.type}
-        </div>
-        <div>
-          <strong>申請期間:</strong> {approval.startDate} 〜{" "}
-          {approval.endDate}
-        </div>
-        <div>
-          <strong>申請日数:</strong> {approval.days} 日
-        </div>
+        {approval.type === "休暇申請" ? (
+          <>
+            <div>
+              <strong>申請者:</strong> {approval.displayName}
+            </div>
+            <div>
+              <strong>申請する休日:</strong> {approval.type}
+            </div>
+            <div>
+              <strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}
+            </div>
+            <div>
+              <strong>申請日数:</strong> {approval.days} 日
+            </div>
+            <div>
+              <strong>内容:</strong> {approval.note}
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <strong>申請者:</strong> {approval.displayName}
+            </div>
+            <div>
+              <strong>内容:</strong> {approval.content}
+            </div>
+            <div>
+              <strong>金額:</strong> {approval.amount}
+            </div>
+            <div>
+              <strong>添付ファイル:</strong>
+              {approval.attachmentFiles?.map(file => (
+                <div key={file.fileUrl}>
+                  <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{file.fileName}</a>
+                </div>
+              ))}
+            </div>
+            <div>
+              <strong>その他添付ファイル:</strong>
+              {approval.otherAttachmentFiles?.map(file => (
+                <div key={file.fileUrl}>
+                  <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">{file.fileName}</a>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         {approval.approvers.map((approver, index) => (
           <div key={`${index}-${approver.approverId}`} className="approver">
             <div>

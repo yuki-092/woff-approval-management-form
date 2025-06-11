@@ -62,7 +62,9 @@ exports.handler = async (event) => {
         note: item.note,
         startDate: item.startDate,
         status: item.status,
-        submittedAt: item.submittedAt
+        submittedAt: item.submittedAt,
+        transferWorkDate: item.transferWorkDate,
+        transferLeaveDate: item.transferLeaveDate
       };
     });
 

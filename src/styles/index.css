@@ -111,16 +111,19 @@
   .approval-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 24px;
+    margin-bottom: 24px;
   }
   
   /* approval-card */
   .approval-card {
-    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #ccc;
     border-radius: 8px;
+    background-color: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    padding: 20px;
     display: flex;
     flex-direction: column;
   }

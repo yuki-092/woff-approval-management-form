@@ -135,10 +135,10 @@
     margin-bottom: 10px;
   }
   
-  .badge {
+.badge {
     font-size: 1.2rem;
     font-weight: bold;
-    background-color: #4CAF50;
+    background-color: #7e57c2; /* 紫色 */
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
@@ -221,10 +221,10 @@
     border-radius: 4px;
   }
   
-  .approver .approve-btn {
-    background-color: #4caf50;
-    color: white;
-  }
+.approver .approve-btn {
+  background-color: #7e57c2; /* 紫色 */
+  color: white;
+}
   
   .approver .reject-btn {
     background-color: #f44336;
@@ -426,7 +426,7 @@ td:last-child {
 }
 
 .approval-buttons .approve-btn {
-  background-color: #4caf50; /* 緑色 */
+  background-color: #7e57c2; /* 紫色 */
   color: white;
 }
 

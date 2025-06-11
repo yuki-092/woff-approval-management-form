@@ -138,7 +138,7 @@
 .badge {
     font-size: 1.2rem;
     font-weight: bold;
-    background-color: #7e57c2; /* 紫色 */
+    background-color: #4caf50; /* 元の緑色 */
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
@@ -222,7 +222,7 @@
   }
   
 .approver .approve-btn {
-  background-color: #7e57c2; /* 紫色 */
+  background-color: #4caf50; /* 元の緑色 */
   color: white;
 }
   
@@ -426,7 +426,7 @@ td:last-child {
 }
 
 .approval-buttons .approve-btn {
-  background-color: #7e57c2; /* 紫色 */
+  background-color: #4caf50; /* 元の緑色 */
   color: white;
 }
 

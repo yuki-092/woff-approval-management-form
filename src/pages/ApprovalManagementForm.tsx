@@ -26,6 +26,8 @@ type ApprovalData = {
   amount?: number;
   attachmentFiles?: string[];
   otherAttachmentFiles?: string[];
+  transferWorkDate?: string;
+  transferLeaveDate?: string;
 };
 
 
@@ -208,12 +210,26 @@ const ApprovalLeaveItem: React.FC<ApprovalItemProps> = ({ approval, onApproveRej
           <div>
             <strong>申請する休日:</strong> {approval.type}
           </div>
-          <div>
-            <strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}
-          </div>
-          <div>
-            <strong>申請日数:</strong> {approval.days} 日
-          </div>
+          {approval.type !== '振替' && (
+            <>
+              <div>
+                <strong>申請期間:</strong> {approval.startDate} 〜 {approval.endDate}
+              </div>
+              <div>
+                <strong>申請日数:</strong> {approval.days} 日
+              </div>
+            </>
+          )}
+          {approval.type === '振替' && (
+            <>
+              <div>
+                <strong>振替対象日:</strong> {approval.transferWorkDate || '未入力'}
+              </div>
+              <div>
+                <strong>振替休暇取得希望日:</strong> {approval.transferLeaveDate || '未入力'}
+              </div>
+            </>
+          )}
           <div>
             <strong>内容:</strong> {approval.note}
           </div>

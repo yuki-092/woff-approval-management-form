@@ -439,3 +439,35 @@ td:last-child {
   background-color: #ccc; /* ボタン無効時の色 */
   cursor: not-allowed;
 }
+
+
+.admin-top-page {
+  padding: 2rem;
+  text-align: center;
+}
+
+.admin-top-buttons {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.admin-top-button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background-color: #ae1d23;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.admin-top-button:hover {
+  background-color: #91181e;
+}
+
+.admin-top-button:active {
+  transform: scale(0.98);
+}

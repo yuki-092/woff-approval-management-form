@@ -1,4 +1,7 @@
 import React from 'react';
+import AdminTopPage from './pages/admin/AdminTopPage';
+import LeaveListPage from './pages/admin/LeaveListPage';
+import RingiListPage from './pages/admin/RingiListPage';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ApprovalManagementForm from './pages/ApprovalManagementForm';
 import CompletePage from './pages/CompletePage';

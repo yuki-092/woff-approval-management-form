@@ -35,6 +35,22 @@
         }
       ]
     },
+    "AMPLIFY_function_getAllRingiRecordsHandler_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "getAllRingiRecordsHandler"
+        }
+      ]
+    },
+    "AMPLIFY_function_getAllRingiRecordsHandler_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "getAllRingiRecordsHandler"
+        }
+      ]
+    },
     "AMPLIFY_function_handleApprovalReject_deploymentBucketName": {
       "usedBy": [
         {

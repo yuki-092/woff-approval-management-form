@@ -1,25 +1,15 @@
 import React from 'react';
-import AdminTopPage from './pages/admin/AdminTopPage';
-import LeaveListPage from './pages/admin/LeaveListPage';
-import RingiListPage from './pages/admin/RingiListPage';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import ApprovalManagementForm from './pages/ApprovalManagementForm';
-import CompletePage from './pages/CompletePage';
 
-function App() {
+const AdminTopPage = () => {
   return (
-    <Router>
-      <div>
-        <Routes>
-          <Route path="/" element={<ApprovalManagementForm />} />
-          <Route path="/complete" element={<CompletePage />} />
-          <Route path="/admin" element={<AdminTopPage />} />
-          <Route path="/admin/leave" element={<LeaveListPage />} />
-          <Route path="/admin/ringi" element={<RingiListPage />} />
-        </Routes>
+    <div className="admin-top-page">
+      <h1>Admin Top Page</h1>
+      <div style={{ padding: '2rem', backgroundColor: 'yellow', fontSize: '2rem' }}>
+        ✅ 表示テスト：これは見えますか？
       </div>
-    </Router>
+      {/* Other content */}
+    </div>
   );
-}
+};
 
-export default App;
+export default AdminTopPage;

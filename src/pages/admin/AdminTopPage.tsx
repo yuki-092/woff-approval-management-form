@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AdminTopPage: React.FC = () => {
+const AdminTopPage = () => {
   const navigate = useNavigate();
 
   return (

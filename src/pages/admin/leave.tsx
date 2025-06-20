@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from 'react';
 
 type Approver = {
@@ -116,17 +114,36 @@ const LeavePage = () => {
   }
 
   return (
-    <div>
-      <h2>休暇申請一覧</h2>
-      {data.map((item) => (
-        <div key={item.requestId} className="leave-card">
-          <h3>{item.displayName}</h3>
-          <p>申請タイプ: {item.type}</p>
-          <p>期間: {item.startDate} 〜 {item.endDate}</p>
-          <p>所属: {item.departmentName}</p>
-          <p>ステータス: {item.status}</p>
-        </div>
-      ))}
+    <div className="approval-page">
+      <h2 className="approval-title">休暇申請一覧</h2>
+      <div className="approval-list">
+        {data.map((item) => (
+          <div className="approval-card" key={item.requestId}>
+            <div className="approval-header-top">
+              <span className="badge">休暇申請</span>
+              <span className="approval-date">申請日時: {new Date(item.submittedAt).toLocaleString('ja-JP')}</span>
+            </div>
+            <div className="approval-body">
+              <div><strong>申請者:</strong> {item.displayName}</div>
+              <div><strong>申請する休日:</strong> {item.type}</div>
+              <div><strong>申請期間:</strong> {item.startDate} 〜 {item.endDate || '未定'}</div>
+              <div><strong>日数:</strong> {item.days} 日</div>
+              <div><strong>所属:</strong> {item.departmentName}</div>
+              <div><strong>内容:</strong> {item.note || '（なし）'}</div>
+            </div>
+            <div className="approval-approvers">
+              {item.approvers.map((approver, index) => (
+                <div className="approver" key={index}>
+                  <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>
+                  <div className={`approver-status ${approver.approverStatus}`}>
+                    {approver.approverStatus}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

@@ -449,8 +449,9 @@ td:last-child {
 .admin-top-buttons {
   margin-top: 2rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column; /* ← 横並びから縦並びに変更 */
   gap: 2rem;
+  align-items: center; /* ボタンを中央寄せ */
 }
 
 .admin-top-button {

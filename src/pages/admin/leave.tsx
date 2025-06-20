@@ -129,15 +129,18 @@ const LeavePage = () => {
               <div><strong>申請期間:</strong> {item.startDate} 〜 {item.endDate || '未定'}</div>
               <div><strong>日数:</strong> {item.days} 日</div>
               <div><strong>所属:</strong> {item.departmentName}</div>
-              <div><strong>内容:</strong> {item.note || '（なし）'}</div>
+              <div><strong>備考:</strong> {item.note || '（なし）'}</div>
             </div>
             <div className="approval-approvers">
               {item.approvers.map((approver, index) => (
                 <div className="approver" key={index}>
                   <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>
                   <div className={`approver-status ${approver.approverStatus}`}>
-                    {approver.approverStatus}
+                    {approver.approverStatus === '承認' ? '承認済み' : approver.approverStatus}
                   </div>
+                  {approver.approverStatus === '承認' && approver.approverApprovedAt && (
+                    <div className="approver-date">承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}</div>
+                  )}
                 </div>
               ))}
             </div>

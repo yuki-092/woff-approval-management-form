@@ -163,10 +163,11 @@
   }
   
   /* approver status section */
-  .approval-approvers {
+.approval-approvers {
     display: flex;
     justify-content: space-between;
     margin-top: 20px;
+    gap: 12px;
   }
   
   .approver {
@@ -239,6 +240,14 @@
   .approver button:active {
     transform: scale(0.98);
   }
+
+/* Added approver date style */
+.approver-date {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 4px;
+}
+
 /* Centered loading spinner */
 /* ローディングコンテナ */
 .loading-container {

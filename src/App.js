@@ -1,15 +1,17 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ApprovalManagementForm from './pages/ApprovalManagementForm';
+import AdminTopPage from './pages/admin/AdminTopPage';
 
-const AdminTopPage = () => {
+const App = () => {
   return (
-    <div className="admin-top-page">
-      <h1>Admin Top Page</h1>
-      <div style={{ padding: '2rem', backgroundColor: 'yellow', fontSize: '2rem' }}>
-        ✅ 表示テスト：これは見えますか？
-      </div>
-      {/* Other content */}
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<ApprovalManagementForm />} />
+        <Route path="/admin" element={<AdminTopPage />} />
+      </Routes>
+    </Router>
   );
 };
 
-export default AdminTopPage;
+export default App;

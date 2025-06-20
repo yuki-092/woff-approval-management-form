@@ -124,12 +124,24 @@ const LeavePage = () => {
               <span className="approval-date">申請日時: {new Date(item.submittedAt).toLocaleString('ja-JP')}</span>
             </div>
             <div className="approval-body">
-              <div><strong>申請者:</strong> {item.displayName}</div>
-              <div><strong>申請する休日:</strong> {item.type}</div>
-              <div><strong>申請期間:</strong> {item.startDate} 〜 {item.endDate || '未定'}</div>
-              <div><strong>日数:</strong> {item.days} 日</div>
-              <div><strong>所属:</strong> {item.departmentName}</div>
-              <div><strong>備考:</strong> {item.note || '（なし）'}</div>
+              {item.type === '振替' ? (
+                <>
+                  <div><strong>申請者:</strong> {item.displayName}</div>
+                  <div><strong>申請する休日:</strong> 振替</div>
+                  <div><strong>振替対象日:</strong> {item.transferWorkDate}</div>
+                  <div><strong>振替休暇取得希望日:</strong> {item.transferLeaveDate}</div>
+                  <div><strong>備考:</strong> {item.note || '（なし）'}</div>
+                </>
+              ) : (
+                <>
+                  <div><strong>申請者:</strong> {item.displayName}</div>
+                  <div><strong>申請する休日:</strong> {item.type}</div>
+                  <div><strong>申請期間:</strong> {item.startDate} 〜 {item.endDate || '未定'}</div>
+                  <div><strong>日数:</strong> {item.days} 日</div>
+                  <div><strong>所属:</strong> {item.departmentName}</div>
+                  <div><strong>備考:</strong> {item.note || '（なし）'}</div>
+                </>
+              )}
             </div>
             <div className="approval-approvers">
               {item.approvers.map((approver, index) => (

@@ -7,9 +7,6 @@ const AdminTopPage = () => {
   return (
     <div className="admin-top-page">
       <h1>管理者画面</h1>
-      <div style={{ padding: '2rem', backgroundColor: 'yellow', fontSize: '2rem' }}>
-        ✅ 表示テスト：これは見えますか？
-      </div>
       <div className="admin-top-buttons">
         <button
           onClick={() => navigate('/admin/leave')}

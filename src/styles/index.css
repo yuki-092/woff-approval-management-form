@@ -471,3 +471,11 @@ td:last-child {
 .admin-top-button:active {
   transform: scale(0.98);
 }
+
+.admin-top-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}

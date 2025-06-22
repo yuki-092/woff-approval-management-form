@@ -150,7 +150,9 @@ const LeavePage = () => {
         <label>休暇日時フィルター:</label>
         <DatePicker
           selected={startDate}
-          onChange={(date: Date) => setStartDate(date)}
+          onChange={(date: Date | null) => {
+            if (date) setStartDate(date);
+          }}
           selectsStart
           startDate={startDate}
           endDate={endDate}
@@ -160,7 +162,9 @@ const LeavePage = () => {
         <span> ~ </span>
         <DatePicker
           selected={endDate}
-          onChange={(date: Date) => setEndDate(date)}
+          onChange={(date: Date | null) => {
+            if (date) setEndDate(date);
+          }}
           selectsEnd
           startDate={startDate}
           endDate={endDate}

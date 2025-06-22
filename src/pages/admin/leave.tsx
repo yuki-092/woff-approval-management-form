@@ -24,6 +24,7 @@ type LeaveRequest = {
   submittedAt: string;
   transferWorkDate: string;
   transferLeaveDate: string;
+  transferDate?: string; // Added optional transferDate for filtering
 };
 
 const mockData: LeaveRequest[] = [
@@ -96,6 +97,7 @@ const mockData: LeaveRequest[] = [
 const LeavePage = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LeaveRequest[]>([]);
+  const [filterDate, setFilterDate] = useState<string | null>(null);
 
   useEffect(() => {
     // Simulate fetching data
@@ -112,6 +114,11 @@ const LeavePage = () => {
   if (data.length === 0) {
     return <div>データなし</div>;
   }
+
+  const filteredData = data.filter((item) => {
+    const targetDate = item.type === "振替" ? item.transferDate : item.startDate;
+    return filterDate ? targetDate === filterDate : true;
+  });
 
   const getStatusTextAndClass = (status: string) => {
     switch (status) {
@@ -130,7 +137,7 @@ const LeavePage = () => {
     <div className="approval-page">
       <h2 className="approval-title">休暇申請一覧</h2>
       <div className="approval-list">
-        {data.map((item) => (
+        {filteredData.map((item) => (
           <div className="approval-card" key={item.requestId}>
             <div className="approval-header-top">
               <span className="badge">休暇申請</span>

@@ -500,3 +500,15 @@ td:last-child {
 .status-rejected {
   color: #dc143c; /* 赤系（非承認） */
 }
+
+/* Added styles for date filter */
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.date-filter label {
+  font-weight: bold;
+}

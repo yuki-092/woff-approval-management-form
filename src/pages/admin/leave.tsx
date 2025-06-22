@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 type Approver = {
   approverId: string;
@@ -98,6 +100,8 @@ const LeavePage = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LeaveRequest[]>([]);
   const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
     // Simulate fetching data
@@ -116,8 +120,14 @@ const LeavePage = () => {
   }
 
   const filteredData = data.filter((item) => {
-    const targetDate = item.type === "振替" ? item.transferDate : item.startDate;
-    return filterDate ? targetDate === filterDate : true;
+    const filterTargetDate = item.type === 'transfer'
+      ? new Date(item.transferDate as string)
+      : new Date(item.startDate);
+
+    const isAfterStart = startDate ? filterTargetDate >= startDate : true;
+    const isBeforeEnd = endDate ? filterTargetDate <= endDate : true;
+
+    return isAfterStart && isBeforeEnd;
   });
 
   const getStatusTextAndClass = (status: string) => {
@@ -136,6 +146,28 @@ const LeavePage = () => {
   return (
     <div className="approval-page">
       <h2 className="approval-title">休暇申請一覧</h2>
+      <div className="date-filter">
+        <label>休暇日時フィルター:</label>
+        <DatePicker
+          selected={startDate}
+          onChange={(date: Date) => setStartDate(date)}
+          selectsStart
+          startDate={startDate}
+          endDate={endDate}
+          dateFormat="yyyy/MM/dd"
+          placeholderText="開始日"
+        />
+        <span> ~ </span>
+        <DatePicker
+          selected={endDate}
+          onChange={(date: Date) => setEndDate(date)}
+          selectsEnd
+          startDate={startDate}
+          endDate={endDate}
+          dateFormat="yyyy/MM/dd"
+          placeholderText="終了日"
+        />
+      </div>
       <div className="approval-list">
         {filteredData.map((item) => (
           <div className="approval-card" key={item.requestId}>

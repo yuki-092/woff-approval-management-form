@@ -113,6 +113,19 @@ const LeavePage = () => {
     return <div>データなし</div>;
   }
 
+  const getStatusTextAndClass = (status: string) => {
+    switch (status) {
+      case '承認':
+        return { text: '承認済み', className: 'status-approved' };
+      case '承認待ち':
+        return { text: '未承認', className: 'status-pending' };
+      case '否決':
+        return { text: '否決', className: 'status-rejected' };
+      default:
+        return { text: status, className: '' };
+    }
+  };
+
   return (
     <div className="approval-page">
       <h2 className="approval-title">休暇申請一覧</h2>
@@ -144,17 +157,18 @@ const LeavePage = () => {
               )}
             </div>
             <div className="approval-approvers">
-              {item.approvers.map((approver, index) => (
-                <div className="approver" key={index}>
-                  <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>
-                  <div className={`approver-status ${approver.approverStatus}`}>
-                    {approver.approverStatus === '承認' ? '承認済み' : approver.approverStatus}
+              {item.approvers.map((approver, index) => {
+                const { text, className } = getStatusTextAndClass(approver.approverStatus);
+                return (
+                  <div className="approver" key={index}>
+                    <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>
+                    <div className={className}>{text}</div>
+                    {approver.approverStatus === '承認' && approver.approverApprovedAt && (
+                      <div className="approver-date">承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}</div>
+                    )}
                   </div>
-                  {approver.approverStatus === '承認' && approver.approverApprovedAt && (
-                    <div className="approver-date">承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}</div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

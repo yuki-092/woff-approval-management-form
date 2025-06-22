@@ -489,3 +489,14 @@ td:last-child {
   max-width: 400px;
   margin: 0 auto;
 }
+.status-approved {
+  color: #2e8b57; /* 緑系（承認済み） */
+}
+
+.status-pending {
+  color: #ffa500; /* オレンジ系（保留中） */
+}
+
+.status-rejected {
+  color: #dc143c; /* 赤系（非承認） */
+}

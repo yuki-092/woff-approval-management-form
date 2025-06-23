@@ -119,26 +119,29 @@ const LeavePage = () => {
     return <div>データなし</div>;
   }
 
-  const filteredData = data.filter((item) => {
-    const filterTargetDate = item.type === 'transfer'
-      ? new Date(item.transferDate as string)
-      : new Date(item.startDate);
+  // 新しいフィルターロジック
+  const filterStartDate = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+  const filterEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+  const filteredData = data.filter((leave) => {
+    const leaveStart = new Date(leave.startDate);
+    const leaveEnd = new Date(leave.endDate);
+    const isSubstitute = leave.type === '振替';
 
-    if (startDate && endDate) {
-      const fromDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const toDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
-      return fromDate.toDateString() <= dataDate.toDateString() && dataDate.toDateString() <= toDate.toDateString();
-    } else if (startDate) {
-      const fromDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
-      return fromDate.toDateString() <= dataDate.toDateString();
-    } else if (endDate) {
-      const toDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
-      return dataDate.toDateString() <= toDate.toDateString();
+    // フィルターが指定されていない場合は全件表示
+    if (!filterStartDate || !filterEndDate) return true;
+
+    if (isSubstitute) {
+      // 振替休日の場合は transferLeaveDate がフィルター範囲内に含まれるか確認
+      // transferLeaveDateが空文字の場合は除外
+      if (!leave.transferLeaveDate) return false;
+      const substituteDate = new Date(leave.transferLeaveDate);
+      return substituteDate >= filterStartDate && substituteDate <= filterEndDate;
     } else {
-      return true;
+      // 通常の休暇は申請期間がフィルター範囲と重なるかを判定
+      return (
+        leaveEnd >= filterStartDate &&
+        leaveStart <= filterEndDate
+      );
     }
   });
 

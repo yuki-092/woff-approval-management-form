@@ -124,10 +124,22 @@ const LeavePage = () => {
       ? new Date(item.transferDate as string)
       : new Date(item.startDate);
 
-    const isAfterStart = startDate ? filterTargetDate >= startDate : true;
-    const isBeforeEnd = endDate ? filterTargetDate <= endDate : true;
-
-    return isAfterStart && isBeforeEnd;
+    if (startDate && endDate) {
+      const fromDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const toDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
+      return fromDate.toDateString() <= dataDate.toDateString() && dataDate.toDateString() <= toDate.toDateString();
+    } else if (startDate) {
+      const fromDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
+      return fromDate.toDateString() <= dataDate.toDateString();
+    } else if (endDate) {
+      const toDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      const dataDate = new Date(filterTargetDate.getFullYear(), filterTargetDate.getMonth(), filterTargetDate.getDate());
+      return dataDate.toDateString() <= toDate.toDateString();
+    } else {
+      return true;
+    }
   });
 
   const getStatusTextAndClass = (status: string) => {

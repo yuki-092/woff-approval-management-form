@@ -281,6 +281,7 @@ const LeavePage = () => {
           </div>
         ))}
       </div>
+      <img src="/mermaid.png" alt="Mermaid" className="swimming-mermaid" />
     </div>
   );
 };

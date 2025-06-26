@@ -206,7 +206,7 @@ const LeavePage = () => {
   return (
     <div className="approval-page rainbow-background">
       <h2 className="approval-title">休暇申請一覧</h2>
-      <button onClick={handleExportToExcel}>Excelに出力</button>
+      <button className="excel-download-button" onClick={handleExportToExcel}>Excelに出力</button>
       <div className="date-filter">
         <label>休暇日時フィルター:</label>
         <DatePicker

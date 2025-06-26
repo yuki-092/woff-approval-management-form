@@ -637,3 +637,49 @@ td:last-child {
     transform: translateX(0) scaleX(-1);
   }
 }
+
+/* Mermaid floating animation and container */
+.mermaid-container {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.mermaid-icon {
+  position: absolute;
+  width: 120px;
+  height: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.mermaid-icon.floating {
+  animation: swimAround 20s infinite ease-in-out;
+}
+
+@keyframes swimAround {
+  0% {
+    transform: translate(0%, 0%) rotate(0deg);
+  }
+  20% {
+    transform: translate(30vw, 10vh) rotate(15deg);
+  }
+  40% {
+    transform: translate(-20vw, 20vh) rotate(-15deg);
+  }
+  60% {
+    transform: translate(25vw, -15vh) rotate(10deg);
+  }
+  80% {
+    transform: translate(-30vw, -10vh) rotate(-10deg);
+  }
+  100% {
+    transform: translate(0%, 0%) rotate(0deg);
+  }
+}

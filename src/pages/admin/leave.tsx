@@ -162,53 +162,31 @@ const LeavePage = () => {
   };
 
   const handleExportToExcel = () => {
-    const normalHeaders = [
+    const headers = [
       '申請者',
       '所属',
       '申請する休日',
       '申請期間（自）',
       '申請期間（至）',
       '申請日数',
-      '備考',
-    ];
-
-    const substituteHeaders = [
-      '申請者',
-      '所属',
-      '申請する休日',
       '振替対象日',
       '振替休暇取得日',
       '備考',
     ];
 
     const exportData = filteredData.map((item) => {
-      const isSubstitute = item.type === '振替';
-      const approver1 = item.approvers[0] || {};
-      const approver2 = item.approvers[1] || {};
-
-      if (isSubstitute) {
-        return {
-          '申請者': item.displayName,
-          '所属': item.departmentName,
-          '申請する休日': item.type,
-          '振替対象日': item.transferWorkDate,
-          '振替休暇取得日': item.transferLeaveDate,
-          '備考': item.note,
-        };
-      } else {
-        return {
-          '申請者': item.displayName,
-          '所属': item.departmentName,
-          '申請する休日': item.type,
-          '申請期間（自）': item.startDate,
-          '申請期間（至）': item.endDate,
-          '申請日数': item.days,
-          '備考': item.note,
-        };
-      }
+      return {
+        '申請者': item.displayName,
+        '所属': item.departmentName,
+        '申請する休日': item.type,
+        '申請期間（自）': item.startDate ?? '',
+        '申請期間（至）': item.endDate ?? '',
+        '申請日数': item.days ?? '',
+        '振替対象日': item.transferWorkDate ?? '',
+        '振替休暇取得日': item.transferLeaveDate ?? '',
+        '備考': item.note ?? '',
+      };
     });
-
-    const headers = filteredData.length > 0 && filteredData[0].type === '振替' ? substituteHeaders : normalHeaders;
 
     // ヘッダー順に並べ替えたオブジェクトの配列を作成
     const dataForSheet = exportData.map(row => {

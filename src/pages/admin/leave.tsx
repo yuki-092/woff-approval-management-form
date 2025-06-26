@@ -208,12 +208,18 @@ const LeavePage = () => {
       }
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(
-      exportData,
-      {
-        header: filteredData.length > 0 && filteredData[0].type === '振替' ? substituteHeaders : normalHeaders,
-      }
-    );
+    const headers = filteredData.length > 0 && filteredData[0].type === '振替' ? substituteHeaders : normalHeaders;
+
+    // ヘッダー順に並べ替えたオブジェクトの配列を作成
+    const dataForSheet = exportData.map(row => {
+      const ordered: any = {};
+      headers.forEach(key => {
+        ordered[key] = (row as Record<string, string | number | undefined>)[key] ?? '';
+      });
+      return ordered;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '休暇申請');
     XLSX.writeFile(workbook, '休暇申請.xlsx');

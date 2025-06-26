@@ -121,7 +121,9 @@ const LeavePage = () => {
 
   // 新しいフィルターロジック
   const filterStartDate = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
-  const filterEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+  const filterEndDate = endDate
+    ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1)
+    : null;
   const filteredData = data.filter((leave) => {
     const leaveStart = new Date(leave.startDate);
     const leaveEnd = new Date(leave.endDate);

@@ -66,7 +66,7 @@ const mockData: LeaveRequest[] = [
     requestId: 'req-2',
     userId: 'user-2',
     displayName: '佐藤 太郎',
-    type: '代休',
+    type: '振替',
     approvers: [
       {
         approverId: 'approver-3',
@@ -86,13 +86,13 @@ const mockData: LeaveRequest[] = [
     days: 1,
     departmentName: 'KITTE 博多',
     emergencyContact: '080-xxxx-xxxx',
-    endDate: '2025-06-25',
+    endDate: '',
     note: '私用のため',
-    startDate: '2025-06-25',
+    startDate: '',
     status: 'pending',
     submittedAt: '2025-06-19T21:00:00.000Z',
-    transferWorkDate: '',
-    transferLeaveDate: '',
+    transferWorkDate: '2025-06-25',
+    transferLeaveDate: '2025-06-26',
   },
 ];
 
@@ -139,8 +139,8 @@ const LeavePage = () => {
     } else {
       // 通常の休暇は申請期間がフィルター範囲と重なるかを判定
       return (
-        leaveEnd >= filterStartDate &&
-        leaveStart <= filterEndDate
+        leaveStart <= filterEndDate &&
+        leaveEnd >= filterStartDate
       );
     }
   });

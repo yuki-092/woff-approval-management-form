@@ -162,6 +162,25 @@ const LeavePage = () => {
   };
 
   const handleExportToExcel = () => {
+    const normalHeaders = [
+      '申請者',
+      '所属',
+      '申請する休日',
+      '申請期間（自）',
+      '申請期間（至）',
+      '申請日数',
+      '備考',
+    ];
+
+    const substituteHeaders = [
+      '申請者',
+      '所属',
+      '申請する休日',
+      '振替対象日',
+      '振替休暇取得日',
+      '備考',
+    ];
+
     const exportData = filteredData.map((item) => {
       const isSubstitute = item.type === '振替';
       const approver1 = item.approvers[0] || {};
@@ -189,7 +208,12 @@ const LeavePage = () => {
       }
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = XLSX.utils.json_to_sheet(
+      exportData,
+      {
+        header: filteredData.length > 0 && filteredData[0].type === '振替' ? substituteHeaders : normalHeaders,
+      }
+    );
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '休暇申請');
     XLSX.writeFile(workbook, '休暇申請.xlsx');

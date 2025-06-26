@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import * as XLSX from 'xlsx';
 
 type Approver = {
   approverId: string;
@@ -160,9 +161,27 @@ const LeavePage = () => {
     }
   };
 
+  const handleExportToExcel = () => {
+    const exportData = filteredData.map((item) => ({
+      申請者: item.displayName,
+      申請タイプ: item.type,
+      開始日: item.startDate,
+      終了日: item.endDate,
+      備考: item.note,
+      所属: item.departmentName,
+      申請日時: new Date(item.submittedAt).toLocaleString('ja-JP'),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '休暇申請');
+    XLSX.writeFile(workbook, 'export.xlsx');
+  };
+
   return (
     <div className="approval-page">
       <h2 className="approval-title">休暇申請一覧</h2>
+      <button onClick={handleExportToExcel}>Excelに出力</button>
       <div className="date-filter">
         <label>休暇日時フィルター:</label>
         <DatePicker

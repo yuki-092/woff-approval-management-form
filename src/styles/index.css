@@ -553,6 +553,18 @@ td:last-child {
   background-color: #c29e2e;
 }
 
+/* Exportボタン用マージン */
+.export-button {
+  margin-left: 16px;
+}
+
+/* フィルターと出力ボタンを並べる場合の余白調整 */
+.filter-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 /* Added styles for ExportButton with Mermaid font and bubble effect */
 @import url('https://fonts.googleapis.com/css2?family=Seaweed+Script&display=swap');
 

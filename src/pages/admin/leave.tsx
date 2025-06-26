@@ -162,20 +162,49 @@ const LeavePage = () => {
   };
 
   const handleExportToExcel = () => {
-    const exportData = filteredData.map((item) => ({
-      申請者: item.displayName,
-      申請タイプ: item.type,
-      開始日: item.startDate,
-      終了日: item.endDate,
-      備考: item.note,
-      所属: item.departmentName,
-      申請日時: new Date(item.submittedAt).toLocaleString('ja-JP'),
-    }));
+    const exportData = filteredData.map((item) => {
+      const isSubstitute = item.type === '振替';
+      const approver1 = item.approvers[0] || {};
+      const approver2 = item.approvers[1] || {};
+
+      if (isSubstitute) {
+        return {
+          申請者: item.displayName,
+          所属: item.departmentName,
+          申請する休日: item.type,
+          振替対象日: item.transferWorkDate,
+          振替休暇取得日: item.transferLeaveDate,
+          備考: item.note,
+          承認者1: approver1.approverName || '',
+          承認者1承認ステータス: approver1.approverStatus || '',
+          承認者1承認日時: approver1.approverApprovedAt ? new Date(approver1.approverApprovedAt).toLocaleString('ja-JP') : '',
+          承認者2: approver2.approverName || '',
+          承認者2承認ステータス: approver2.approverStatus || '',
+          承認者2承認日時: approver2.approverApprovedAt ? new Date(approver2.approverApprovedAt).toLocaleString('ja-JP') : '',
+        };
+      } else {
+        return {
+          申請者: item.displayName,
+          所属: item.departmentName,
+          申請する休日: item.type,
+          '申請期間（自）': item.startDate,
+          '申請期間（至）': item.endDate,
+          申請日数: item.days,
+          備考: item.note,
+          承認者1: approver1.approverName || '',
+          承認者1承認ステータス: approver1.approverStatus || '',
+          承認者1承認日時: approver1.approverApprovedAt ? new Date(approver1.approverApprovedAt).toLocaleString('ja-JP') : '',
+          承認者2: approver2.approverName || '',
+          承認者2承認ステータス: approver2.approverStatus || '',
+          承認者2承認日時: approver2.approverApprovedAt ? new Date(approver2.approverApprovedAt).toLocaleString('ja-JP') : '',
+        };
+      }
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '休暇申請');
-    XLSX.writeFile(workbook, 'export.xlsx');
+    XLSX.writeFile(workbook, '休暇申請.xlsx');
   };
 
   return (

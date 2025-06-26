@@ -266,6 +266,7 @@ const LeavePage = () => {
               {item.type === '振替' ? (
                 <>
                   <div><strong>申請者:</strong> {item.displayName}</div>
+                  <div><strong>所属:</strong> {item.departmentName}</div>
                   <div><strong>申請する休日:</strong> 振替</div>
                   <div><strong>振替対象日:</strong> {item.transferWorkDate}</div>
                   <div><strong>振替休暇取得希望日:</strong> {item.transferLeaveDate}</div>
@@ -274,10 +275,10 @@ const LeavePage = () => {
               ) : (
                 <>
                   <div><strong>申請者:</strong> {item.displayName}</div>
+                  <div><strong>所属:</strong> {item.departmentName}</div>
                   <div><strong>申請する休日:</strong> {item.type}</div>
                   <div><strong>申請期間:</strong> {item.startDate} 〜 {item.endDate || '未定'}</div>
                   <div><strong>日数:</strong> {item.days} 日</div>
-                  <div><strong>所属:</strong> {item.departmentName}</div>
                   <div><strong>備考:</strong> {item.note || '（なし）'}</div>
                 </>
               )}

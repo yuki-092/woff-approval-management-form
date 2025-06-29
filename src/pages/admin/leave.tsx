@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
 
 type Approver = {
   approverId: string;
@@ -30,86 +31,23 @@ type LeaveRequest = {
   transferDate?: string; // Added optional transferDate for filtering
 };
 
-const mockData: LeaveRequest[] = [
-  {
-    requestId: 'e0904373-1f36-49f9-b033-887e72391715',
-    userId: '1b69449b-65b8-4338-117e-04e754198156',
-    displayName: '阿部　憲子（代理・池田祐介）',
-    type: '有給',
-    approvers: [
-      {
-        approverId: '1b69449b-65b8-4338-117e-04e754198156',
-        approverName: '池田祐介',
-        approverStatus: '承認',
-        approverApprovedAt: '2025-06-20T02:25:50.834Z',
-        approverComment: '',
-      },
-      {
-        approverId: 'cd0ed664-cc27-4ae9-1a27-04910bf8223a',
-        approverName: '岡奏子',
-        approverStatus: '承認待ち',
-        approverApprovedAt: '',
-        approverComment: '',
-      },
-    ],
-    days: 1,
-    departmentName: '博多シーフード うお田',
-    emergencyContact: '',
-    endDate: '2025-06-23',
-    note: '',
-    startDate: '2025-06-23',
-    status: 'pending',
-    submittedAt: '2025-06-20T02:25:36.364Z',
-    transferWorkDate: '',
-    transferLeaveDate: '',
-  },
-  {
-    requestId: 'req-2',
-    userId: 'user-2',
-    displayName: '佐藤 太郎',
-    type: '振替',
-    approvers: [
-      {
-        approverId: 'approver-3',
-        approverName: '山田 花子',
-        approverStatus: '承認',
-        approverApprovedAt: '2025-06-19T09:00:00.000Z',
-        approverComment: '了解しました。',
-      },
-      {
-        approverId: 'approver-4',
-        approverName: '田中 一郎',
-        approverStatus: '承認待ち',
-        approverApprovedAt: '',
-        approverComment: '',
-      },
-    ],
-    days: 1,
-    departmentName: 'KITTE 博多',
-    emergencyContact: '080-xxxx-xxxx',
-    endDate: '',
-    note: '私用のため',
-    startDate: '',
-    status: 'pending',
-    submittedAt: '2025-06-19T21:00:00.000Z',
-    transferWorkDate: '2025-06-25',
-    transferLeaveDate: '2025-06-26',
-  },
-];
-
 const LeavePage = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LeaveRequest[]>([]);
-  const [filterDate, setFilterDate] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setData(mockData);
-      setLoading(false);
-    }, 1000);
+    fetch('https://4ub5nmvxbpfxlizulqovd7o5xy0nwuvg.lambda-url.ap-northeast-1.on.aws/')
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -119,34 +57,6 @@ const LeavePage = () => {
   if (data.length === 0) {
     return <div>データなし</div>;
   }
-
-  // 新しいフィルターロジック
-  const filterStartDate = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
-  const filterEndDate = endDate
-    ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1)
-    : null;
-  const filteredData = data.filter((leave) => {
-    const leaveStart = new Date(leave.startDate);
-    const leaveEnd = new Date(leave.endDate);
-    const isSubstitute = leave.type === '振替';
-
-    // フィルターが指定されていない場合は全件表示
-    if (!filterStartDate || !filterEndDate) return true;
-
-    if (isSubstitute) {
-      // 振替休日の場合は transferLeaveDate がフィルター範囲内に含まれるか確認
-      // transferLeaveDateが空文字の場合は除外
-      if (!leave.transferLeaveDate) return false;
-      const substituteDate = new Date(leave.transferLeaveDate);
-      return substituteDate >= filterStartDate && substituteDate <= filterEndDate;
-    } else {
-      // 通常の休暇は申請期間がフィルター範囲と重なるかを判定
-      return (
-        leaveStart <= filterEndDate &&
-        leaveEnd >= filterStartDate
-      );
-    }
-  });
 
   const getStatusTextAndClass = (status: string) => {
     switch (status) {
@@ -174,7 +84,7 @@ const LeavePage = () => {
       '備考',
     ];
 
-    const exportData = filteredData.map((item) => {
+    const exportData = data.map((item) => {
       return {
         '申請者': item.displayName,
         '所属': item.departmentName,
@@ -202,6 +112,33 @@ const LeavePage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, '休暇申請');
     XLSX.writeFile(workbook, '休暇申請.xlsx');
   };
+
+  const dateRange: [Date | null, Date | null] = [startDate, endDate];
+  const filteredData = data.filter((item) => {
+    if (!dateRange[0] || !dateRange[1]) return true;
+    const fromDate = dayjs(dateRange[0]);
+    const toDate = dayjs(dateRange[1]);
+
+    if (item.type === "振替") {
+      const furikaeDate = dayjs(item.transferLeaveDate);
+      return (
+        furikaeDate.isSame(fromDate, "day") ||
+        furikaeDate.isSame(toDate, "day") ||
+        (furikaeDate.isAfter(fromDate) && furikaeDate.isBefore(toDate))
+      );
+    } else {
+      const startDate = dayjs(item.startDate);
+      const endDate = dayjs(item.endDate);
+      return (
+        startDate.isSame(fromDate, "day") ||
+        startDate.isSame(toDate, "day") ||
+        (startDate.isAfter(fromDate) && startDate.isBefore(toDate)) ||
+        endDate.isSame(fromDate, "day") ||
+        endDate.isSame(toDate, "day") ||
+        (endDate.isAfter(fromDate) && endDate.isBefore(toDate))
+      );
+    }
+  });
 
   return (
     <div className="approval-page rainbow-background">

@@ -1,5 +1,10 @@
 {
   "function": {
+    "fetchAllLeaveRequests": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
     "fetchPendingRequests": {
       "build": true,
       "dependsOn": [],
@@ -19,6 +24,22 @@
     }
   },
   "parameters": {
+    "AMPLIFY_function_fetchAllLeaveRequests_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "fetchAllLeaveRequests"
+        }
+      ]
+    },
+    "AMPLIFY_function_fetchAllLeaveRequests_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "fetchAllLeaveRequests"
+        }
+      ]
+    },
     "AMPLIFY_function_fetchPendingRequests_deploymentBucketName": {
       "usedBy": [
         {

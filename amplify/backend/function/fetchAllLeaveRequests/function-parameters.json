@@ -1,11 +1,3 @@
 {
-  "providerContext": {
-    "provider": "awscloudformation",
-    "service": "Lambda",
-    "runtime": "nodejs18.x"
-  },
-  "build": true,
-  "esbuildConfig": {
-    "external": ["aws-sdk"]
-  }
+  "lambdaLayers": []
 }

@@ -87,13 +87,14 @@ const LeavePage = () => {
     const exportTarget = startDate && endDate ? filteredData : data;
 
     const exportData = exportTarget.map((item) => {
+      const isFurikae = item.type === '振替';
       return {
         '申請者': item.displayName,
         '所属': item.departmentName,
         '申請する休日': item.type,
         '申請期間（自）': item.startDate ?? '',
         '申請期間（至）': item.endDate ?? '',
-        '申請日数': item.days ?? '',
+        '申請日数': isFurikae ? '' : item.days ?? '',
         '振替対象日': item.transferWorkDate ?? '',
         '振替休暇取得日': item.transferLeaveDate ?? '',
         '備考': item.note ?? '',

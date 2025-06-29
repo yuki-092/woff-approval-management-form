@@ -211,6 +211,9 @@ const LeavePage = () => {
                     {approver.approverStatus === '承認' && approver.approverApprovedAt && (
                       <div className="approver-date">承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}</div>
                     )}
+                    {approver.approverComment && (
+                      <div><strong>コメント:</strong> {approver.approverComment}</div>
+                    )}
                   </div>
                 );
               })}

@@ -84,7 +84,9 @@ const LeavePage = () => {
       '備考',
     ];
 
-    const exportData = data.map((item) => {
+    const exportTarget = startDate && endDate ? filteredData : data;
+
+    const exportData = exportTarget.map((item) => {
       return {
         '申請者': item.displayName,
         '所属': item.departmentName,

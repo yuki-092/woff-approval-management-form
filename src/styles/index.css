@@ -502,6 +502,7 @@ td:last-child {
 }
 
 /* Added styles for date filter */
+/* Added styles for date filter */
 .date-filter {
   display: flex;
   align-items: center;
@@ -511,6 +512,17 @@ td:last-child {
 
 .date-filter label {
   font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  .date-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-filter input {
+    width: 100%;
+  }
 }
 
 /* Added rainbow background and animation */

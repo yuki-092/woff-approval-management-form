@@ -41,7 +41,7 @@ const LeavePage = () => {
     fetch('https://4ub5nmvxbpfxlizulqovd7o5xy0nwuvg.lambda-url.ap-northeast-1.on.aws/')
       .then((response) => response.json())
       .then((data) => {
-        setData(data);
+        setData(data.leaveRequests);
         setLoading(false);
       })
       .catch((error) => {

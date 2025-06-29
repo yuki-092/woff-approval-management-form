@@ -2,6 +2,7 @@ const AWS = require('aws-sdk');
 const dynamoDB = new AWS.DynamoDB.DocumentClient(); 
 
 exports.handler = async (event) => {
+  console.log("EVENT:", JSON.stringify(event, null, 2));
   console.log('#### START fetch data');
 
   const paramsLeaveRequests = {
@@ -44,6 +45,7 @@ exports.handler = async (event) => {
         transferLeaveDate: item.transferLeaveDate
       };
     });
+    console.log("SCAN SUCCESS: Retrieved items:", JSON.stringify(formattedLeaveData, null, 2));
 
     // Remove filtering and return leaveRequests as is
     return {

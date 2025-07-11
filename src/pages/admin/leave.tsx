@@ -127,38 +127,41 @@ const LeavePage = () => {
 
   const dateRange: [Date | null, Date | null] = [startDate, endDate];
   const filteredData = data.filter((item) => {
-    if (!dateRange[0] || !dateRange[1]) return true;
-    const fromDate = dayjs(dateRange[0]);
-    const toDate = dayjs(dateRange[1]);
+    // 日付フィルター適用（存在する場合のみ）
+    if (dateRange[0] && dateRange[1]) {
+      const fromDate = dayjs(dateRange[0]);
+      const toDate = dayjs(dateRange[1]);
 
-    if (item.type === "振替") {
-      const furikaeDate = dayjs(item.transferLeaveDate);
-      if (
-        !(
-          furikaeDate.isSame(fromDate, "day") ||
-          furikaeDate.isSame(toDate, "day") ||
-          (furikaeDate.isAfter(fromDate) && furikaeDate.isBefore(toDate))
-        )
-      ) {
-        return false;
-      }
-    } else {
-      const startDate = dayjs(item.startDate);
-      const endDate = dayjs(item.endDate);
-      if (
-        !(
-          startDate.isSame(fromDate, "day") ||
-          startDate.isSame(toDate, "day") ||
-          (startDate.isAfter(fromDate) && startDate.isBefore(toDate)) ||
-          endDate.isSame(fromDate, "day") ||
-          endDate.isSame(toDate, "day") ||
-          (endDate.isAfter(fromDate) && endDate.isBefore(toDate))
-        )
-      ) {
-        return false;
+      if (item.type === "振替") {
+        const furikaeDate = dayjs(item.transferLeaveDate);
+        if (
+          !(
+            furikaeDate.isSame(fromDate, "day") ||
+            furikaeDate.isSame(toDate, "day") ||
+            (furikaeDate.isAfter(fromDate) && furikaeDate.isBefore(toDate))
+          )
+        ) {
+          return false;
+        }
+      } else {
+        const sDate = dayjs(item.startDate);
+        const eDate = dayjs(item.endDate);
+        if (
+          !(
+            sDate.isSame(fromDate, "day") ||
+            sDate.isSame(toDate, "day") ||
+            (sDate.isAfter(fromDate) && sDate.isBefore(toDate)) ||
+            eDate.isSame(fromDate, "day") ||
+            eDate.isSame(toDate, "day") ||
+            (eDate.isAfter(fromDate) && eDate.isBefore(toDate))
+          )
+        ) {
+          return false;
+        }
       }
     }
 
+    // ステータスフィルター適用（指定されている場合のみ）
     if (statusFilter) {
       const overallStatus = getOverallStatus(item.approvers);
       if (overallStatus !== statusFilter) return false;
@@ -200,7 +203,7 @@ const LeavePage = () => {
           placeholderText="終了日"
         />
       </div>
-      <div className="filter-wrapper">
+      <div className="status-filter">
         <label>申請状況フィルター:</label>
         <select
           className="filter-select"

@@ -36,6 +36,15 @@ const LeavePage = () => {
   const [data, setData] = useState<LeaveRequest[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  const getOverallStatus = (approvers: Approver[]): string => {
+    const statuses = approvers.map(a => a.approverStatus);
+    if (statuses.includes('否決')) return '否決';
+    if (statuses.includes('承認待ち')) return '承認待ち';
+    if (statuses.every(s => s === '承認')) return '承認';
+    return 'その他';
+  };
 
   useEffect(() => {
     fetch('https://4ub5nmvxbpfxlizulqovd7o5xy0nwuvg.lambda-url.ap-northeast-1.on.aws/')
@@ -124,23 +133,38 @@ const LeavePage = () => {
 
     if (item.type === "振替") {
       const furikaeDate = dayjs(item.transferLeaveDate);
-      return (
-        furikaeDate.isSame(fromDate, "day") ||
-        furikaeDate.isSame(toDate, "day") ||
-        (furikaeDate.isAfter(fromDate) && furikaeDate.isBefore(toDate))
-      );
+      if (
+        !(
+          furikaeDate.isSame(fromDate, "day") ||
+          furikaeDate.isSame(toDate, "day") ||
+          (furikaeDate.isAfter(fromDate) && furikaeDate.isBefore(toDate))
+        )
+      ) {
+        return false;
+      }
     } else {
       const startDate = dayjs(item.startDate);
       const endDate = dayjs(item.endDate);
-      return (
-        startDate.isSame(fromDate, "day") ||
-        startDate.isSame(toDate, "day") ||
-        (startDate.isAfter(fromDate) && startDate.isBefore(toDate)) ||
-        endDate.isSame(fromDate, "day") ||
-        endDate.isSame(toDate, "day") ||
-        (endDate.isAfter(fromDate) && endDate.isBefore(toDate))
-      );
+      if (
+        !(
+          startDate.isSame(fromDate, "day") ||
+          startDate.isSame(toDate, "day") ||
+          (startDate.isAfter(fromDate) && startDate.isBefore(toDate)) ||
+          endDate.isSame(fromDate, "day") ||
+          endDate.isSame(toDate, "day") ||
+          (endDate.isAfter(fromDate) && endDate.isBefore(toDate))
+        )
+      ) {
+        return false;
+      }
     }
+
+    if (statusFilter) {
+      const overallStatus = getOverallStatus(item.approvers);
+      if (overallStatus !== statusFilter) return false;
+    }
+
+    return true;
   });
 
   return (
@@ -175,6 +199,19 @@ const LeavePage = () => {
           dateFormat="yyyy/MM/dd"
           placeholderText="終了日"
         />
+      </div>
+      <div className="filter-wrapper">
+        <label>申請状況フィルター:</label>
+        <select
+          className="filter-select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">すべて</option>
+          <option value="承認">承認</option>
+          <option value="承認待ち">未承認</option>
+          <option value="否決">否決</option>
+        </select>
       </div>
       <div className="approval-list">
         {filteredData.map((item) => (

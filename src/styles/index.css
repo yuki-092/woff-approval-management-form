@@ -697,3 +697,18 @@ td:last-child {
     transform: translate(0%, 0%) rotate(0deg);
   }
 }
+
+/* Added styles for status filter */
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.filter-select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}

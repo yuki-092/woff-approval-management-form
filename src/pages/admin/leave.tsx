@@ -93,9 +93,9 @@ const LeavePage = () => {
       '備考',
     ];
 
-    const exportTarget = startDate && endDate ? filteredData : data;
+    // const exportTarget = startDate && endDate ? filteredData : data;
 
-    const exportData = exportTarget.map((item) => {
+    const exportData = filteredData.map((item) => {
       const isFurikae = item.type === '振替';
       return {
         '申請者': item.displayName,

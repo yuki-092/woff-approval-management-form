@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminTopPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = '管理者画面';
+  }, []);
 
   return (
     <div className="admin-top-page">

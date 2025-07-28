@@ -170,11 +170,11 @@ const LeavePage = () => {
     return true;
   });
 
-  // ソート処理（振替：transferLeaveDate、それ以外：startDate を基準に）
+  // ソート処理（振替：transferLeaveDate、それ以外：startDate を基準に、日付の降順）
   const sortedData = [...filteredData].sort((a, b) => {
     const dateA = a.type === '振替' ? new Date(a.transferLeaveDate || '') : new Date(a.startDate || '');
     const dateB = b.type === '振替' ? new Date(b.transferLeaveDate || '') : new Date(b.startDate || '');
-    return dateA.getTime() - dateB.getTime();
+    return dateB.getTime() - dateA.getTime(); // 降順
   });
 
   return (

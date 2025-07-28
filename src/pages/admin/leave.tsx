@@ -170,6 +170,13 @@ const LeavePage = () => {
     return true;
   });
 
+  // ソート処理（振替：transferLeaveDate、それ以外：startDate を基準に）
+  const sortedData = [...filteredData].sort((a, b) => {
+    const dateA = a.type === '振替' ? new Date(a.transferLeaveDate || '') : new Date(a.startDate || '');
+    const dateB = b.type === '振替' ? new Date(b.transferLeaveDate || '') : new Date(b.startDate || '');
+    return dateA.getTime() - dateB.getTime();
+  });
+
   return (
     <div className="approval-page rainbow-background">
       <h2 className="approval-title">休暇申請一覧</h2>
@@ -217,7 +224,7 @@ const LeavePage = () => {
         </select>
       </div>
       <div className="approval-list">
-        {filteredData.map((item) => (
+        {sortedData.map((item) => (
           <div className="approval-card" key={item.requestId}>
             <div className="approval-header-top">
               <span className="badge">休暇申請</span>

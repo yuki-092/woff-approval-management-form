@@ -59,6 +59,10 @@ const LeavePage = () => {
       });
   }, []);
 
+  useEffect(() => {
+    document.title = "全申請の履歴";
+  }, []);
+
   if (loading) {
     return <div>読み込み中...</div>;
   }

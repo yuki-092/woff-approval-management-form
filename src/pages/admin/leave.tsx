@@ -229,7 +229,10 @@ const LeavePage = () => {
       </div>
       <div className="approval-list">
         {sortedData.map((item) => (
-          <div className="approval-card" key={item.requestId}>
+          <div className={`approval-card ${item.status === 'cancel' ? 'cancelled' : ''}`} key={item.requestId}>
+            {item.status === 'cancel' && (
+              <div className="cancel-overlay">cancel</div>
+            )}
             <div className="approval-header-top">
               <span className="badge">休暇申請</span>
               <span className="approval-date">申請日時: {new Date(item.submittedAt).toLocaleString('ja-JP')}</span>

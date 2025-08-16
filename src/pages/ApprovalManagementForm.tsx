@@ -60,8 +60,10 @@ export const ApprovalManagementForm = () => {
           }));
         };
 
-        setLeaveApprovals(transform(data.leaveRequests?.items || []));
-        setRingiApprovals(transform(data.ringiRequests?.items || []));
+        const leaveItems = (data.leaveRequests?.items || []).filter((item: any) => item.status !== "cancel");
+        const ringiItems = (data.ringiRequests?.items || []).filter((item: any) => item.status !== "cancel");
+        setLeaveApprovals(transform(leaveItems));
+        setRingiApprovals(transform(ringiItems));
       } catch (error: any) {
         setError(error.message);
       } finally {

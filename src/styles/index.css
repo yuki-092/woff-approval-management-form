@@ -727,3 +727,13 @@ td:last-child {
   z-index: 10;
   pointer-events: none; /* クリック操作を邪魔しない */
 }
+
+/* Hide common extension overlays that interfere with /complete */
+body > div[style*="position: absolute"][style*="border: 1px solid rgb(255, 0, 0)"] {
+  display: none !important;
+}
+.ue-sidebar-container,
+#tldx-toast-container,
+tldx-lmi-shadow-root {
+  display: none !important;
+}

@@ -109,6 +109,7 @@ export const ApprovalManagementForm = () => {
           const result = await response.json();
           console.log("Approval/Rejection processed successfully!", result);
 
+          setLoading(false);
           // 承認処理が完了した後に complete page に遷移
           navigate("/complete", { replace: true });
       } 

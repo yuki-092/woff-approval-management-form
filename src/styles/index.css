@@ -737,3 +737,10 @@ body > div[style*="position: absolute"][style*="border: 1px solid rgb(255, 0, 0)
 tldx-lmi-shadow-root {
   display: none !important;
 }
+
+/* ===== Force-hide common extension overlays (for /complete) ===== */
+body > div[style*="position: absolute"][style*="border: 1px solid rgb(255, 0, 0)"] { display: none !important; }
+.ue-sidebar-container, #tldx-toast-container, tldx-lmi-shadow-root { display: none !important; }
+iframe[src^="chrome-extension://"] { display: none !important; }
+/* 強制的にCompletePageを前面へ */
+#root .approval-completed-container { position: relative; z-index: 2147483647; }

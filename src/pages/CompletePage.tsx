@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
 
 const CompletePage = () => {
-  // /complete 表示時に、拡張機能などが挿入するオーバーレイを強制的に非表示化
+  // /complete 表示時に、拡張機能が注入するオーバーレイを極力無効化
   useEffect(() => {
     const hide = (selector: string) => {
       document.querySelectorAll(selector).forEach((el) => {
         (el as HTMLElement).style.display = 'none';
       });
     };
-    // 代表的な注入要素（Ubersuggest 等）
+    // 代表的な注入要素（Ubersuggest, Tip, デバッグ枠など）
     hide('div[style*="position: absolute"][style*="border: 1px solid rgb(255, 0, 0)"]');
     hide('.ue-sidebar-container');
     hide('#tldx-toast-container');
     hide('tldx-lmi-shadow-root');
+    hide('iframe[src^="chrome-extension://"]');
   }, []);
 
   return (
@@ -29,8 +30,9 @@ const CompletePage = () => {
         background: '#fff',
         color: '#111',
         position: 'relative',
-        // 可能な限り最前面へ
+        // 可能な限り最前面へ（32bit 上限近い値）
         zIndex: 2147483647,
+        pointerEvents: 'auto',
       }}
     >
       <h2 className="approval-completed-title" style={{ margin: 0 }}>

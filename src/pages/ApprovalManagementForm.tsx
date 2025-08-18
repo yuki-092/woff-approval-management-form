@@ -110,7 +110,7 @@ export const ApprovalManagementForm = () => {
           console.log("Approval/Rejection processed successfully!", result);
 
           // 承認処理が完了した後に complete page に遷移
-          navigate("/complete");
+          navigate("/complete", { replace: true });
       } 
     } catch (error) {
       console.error("Error calling Lambda:", error);

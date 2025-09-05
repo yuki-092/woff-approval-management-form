@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
 
 // Define the types for approver and approval data
@@ -8,6 +8,7 @@ type Approver = {
   approverApprovedAt: string;
   approverComment: string;
   approverName: string;
+  employmentTypeName?: string;
 };
 
 type ApprovalData = {
@@ -32,13 +33,13 @@ type ApprovalData = {
 
 
 export const ApprovalManagementForm = () => {
-  const ALLOWED_TYPES = ['事業長', '店長', 'リーダー', '専務', '社長', '人事・総務', '経理'] as const;
   const navigate = useNavigate();
   const [leaveApprovals, setLeaveApprovals] = useState<ApprovalData[]>([]);
   const [ringiApprovals, setRingiApprovals] = useState<ApprovalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(true);
+  const [currentTypeName, setCurrentTypeName] = useState<string | null>(null);
 
   // 利用権限タイプ（employmentTypeName / userTypeName）を複数のソースから検出
   const detectUserTypeName = (): string | null => {
@@ -51,18 +52,34 @@ export const ApprovalManagementForm = () => {
     return fromWindow || fromLocal || fromSession || fromQuery;
   };
 
+  const ALLOWED_TYPES = useMemo<string[]>(() => {
+    const collect = (arr: ApprovalData[]) =>
+      arr
+        .flatMap((item) => item.approvers.map((a) => a.employmentTypeName))
+        .filter((v): v is string => Boolean(v))
+        .flatMap((v) => v.split(/[ ,、\s/]+/).filter(Boolean));
+
+    const all = [...collect(leaveApprovals), ...collect(ringiApprovals)];
+    return Array.from(new Set(all));
+  }, [leaveApprovals, ringiApprovals]);
+
   useEffect(() => {
     const typeName = detectUserTypeName();
-    if (!typeName) return; // 情報が取れない場合は何もしない（既存挙動を壊さない）
+    if (!typeName) return; // 情報が取れない場合は何もしない
+    setCurrentTypeName(typeName);
+  }, []);
 
-    // カンマ / 全角読点 / スペースで分割していずれか一致したら許可
-    const parts = typeName.split(/[ ,、\s/]+/).filter(Boolean);
-    const allowed = parts.some((p) => ALLOWED_TYPES.includes(p as any));
+  useEffect(() => {
+    if (loading) return; // データ取得前は判定しない
+    if (!currentTypeName) return; // 判定材料がない
+
+    const parts = currentTypeName.split(/[ ,、\s/]+/).filter(Boolean);
+    const allowed = parts.some((p) => ALLOWED_TYPES.includes(p));
     if (!allowed) {
       setIsAuthorized(false);
       alert('閲覧権限がありません');
     }
-  }, []);
+  }, [loading, currentTypeName, ALLOWED_TYPES]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,6 +99,7 @@ export const ApprovalManagementForm = () => {
               approverApprovedAt: approver.approverApprovedAt,
               approverComment: approver.approverComment,
               approverName: approver.approverName,
+              employmentTypeName: approver.employmentTypeName,
             })),
           }));
         };

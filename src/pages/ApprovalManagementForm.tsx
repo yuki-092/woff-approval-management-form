@@ -32,11 +32,37 @@ type ApprovalData = {
 
 
 export const ApprovalManagementForm = () => {
+  const ALLOWED_TYPES = ['事業長', '店長', 'リーダー', '専務', '社長', '人事・総務', '経理'] as const;
   const navigate = useNavigate();
   const [leaveApprovals, setLeaveApprovals] = useState<ApprovalData[]>([]);
   const [ringiApprovals, setRingiApprovals] = useState<ApprovalData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(true);
+
+  // 利用権限タイプ（employmentTypeName / userTypeName）を複数のソースから検出
+  const detectUserTypeName = (): string | null => {
+    const w: any = window as any;
+    const fromWindow = w?.currentUser?.employmentTypeName || w?.currentUser?.userTypeName || null;
+    const fromLocal = localStorage.getItem('employmentTypeName') || localStorage.getItem('userTypeName');
+    const fromSession = sessionStorage.getItem('employmentTypeName') || sessionStorage.getItem('userTypeName');
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get('employmentTypeName') || params.get('userTypeName');
+    return fromWindow || fromLocal || fromSession || fromQuery;
+  };
+
+  useEffect(() => {
+    const typeName = detectUserTypeName();
+    if (!typeName) return; // 情報が取れない場合は何もしない（既存挙動を壊さない）
+
+    // カンマ / 全角読点 / スペースで分割していずれか一致したら許可
+    const parts = typeName.split(/[ ,、\s/]+/).filter(Boolean);
+    const allowed = parts.some((p) => ALLOWED_TYPES.includes(p as any));
+    if (!allowed) {
+      setIsAuthorized(false);
+      alert('閲覧権限がありません');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,6 +146,15 @@ export const ApprovalManagementForm = () => {
       setLoading(false);
     }
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="approval-page">
+        <h1 className="approval-title">未承認リスト一覧</h1>
+        <p>閲覧権限がありません</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

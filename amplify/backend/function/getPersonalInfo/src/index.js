@@ -1,9 +1,11 @@
 // getPersonalInfo/src/index.js
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, ScanCommand } = require("@aws-sdk/lib-dynamodb");
+const { STSClient, GetCallerIdentityCommand } = require("@aws-sdk/client-sts");
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
+const sts = new STSClient({});
 
 const TABLE = process.env.TABLE_NAME || "RingiPersonalInfo";
 console.log("[getPersonalInfo] Booting function. TABLE:", TABLE, "NODE_ENV:", process.env.NODE_ENV, "AWS_REGION:", process.env.AWS_REGION);
@@ -123,6 +125,13 @@ exports.handler = async (event) => {
     (event && event.path) ||
     (event && event.requestContext && event.requestContext.http && event.requestContext.http.path) ||
     '/';
+
+  try {
+    const id = await sts.send(new GetCallerIdentityCommand({}));
+    console.log("[handler] caller identity:", { account: id.Account, arn: id.Arn, userId: id.UserId });
+  } catch (e) {
+    console.warn("[handler] failed to get caller identity:", e && e.message);
+  }
 
   console.log("[handler] invoked. method:", method, "path:", path, "table:", TABLE);
   // console.debug("[handler] headers:", event && event.headers);

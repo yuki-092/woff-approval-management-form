@@ -31,7 +31,7 @@
         },
         "getPersonalInfo": {
           "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",
-          "s3Key": "amplify-builds/getPersonalInfo-74617257713749467032-build.zip"
+          "s3Key": "amplify-builds/getPersonalInfo-5634696c5470514c4778-build.zip"
         }
       }
     }

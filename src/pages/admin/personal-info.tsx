@@ -4,6 +4,14 @@ import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 
+// 金額を円表記にフォーマット。未入力は「（未入力）」を返す
+const formatYen = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null || value === '') return '（未入力）';
+  const num = typeof value === 'number' ? value : Number(String(value).replace(/[^\d.-]/g, ''));
+  if (Number.isNaN(num)) return '（未入力）';
+  return `¥${num.toLocaleString('ja-JP')}`;
+};
+
 type Approver = {
   approverId: string;
   approverName: string;
@@ -223,17 +231,14 @@ const PersonalInfoPage = () => {
 
               {item.changeType === '住所変更' ? (
                 <>
-                  <div><strong>新しい住所:</strong> {item.newAddress || '（未入力）'}</div>
-                  {(item.commuteInfo1 || item.commuteInfo2 || item.commuteInfo3) && (
-                    <>
-                      <div><strong>通勤情報1:</strong> {item.commuteInfo1 || '（なし）'}</div>
-                      {item.commuteInfo2 && <div><strong>通勤情報2:</strong> {item.commuteInfo2}</div>}
-                      {item.commuteInfo3 && <div><strong>通勤情報3:</strong> {item.commuteInfo3}</div>}
-                      {item.commuteCostTotal !== undefined && (
-                        <div><strong>通勤費合計金額(往復):</strong> {item.commuteCostTotal}</div>
-                      )}
-                    </>
-                  )}
+                  <div><strong>新しい住所:</strong> {item.newAddress && item.newAddress.trim() ? item.newAddress : '（未入力）'}</div>
+                  <div className="commute-section">
+                    <div><strong>通勤経路:</strong></div>
+                    <div>通勤情報1: {item.commuteInfo1 && item.commuteInfo1.trim() ? item.commuteInfo1 : '（なし）'}</div>
+                    <div>通勤情報2: {item.commuteInfo2 && item.commuteInfo2.trim() ? item.commuteInfo2 : '（なし）'}</div>
+                    <div>通勤情報3: {item.commuteInfo3 && item.commuteInfo3.trim() ? item.commuteInfo3 : '（なし）'}</div>
+                    <div><strong>交通費（往復）合計:</strong> {formatYen(item.commuteCostTotal)}</div>
+                  </div>
                 </>
               ) : item.changeType === '電話番号変更' ? (
                 <>

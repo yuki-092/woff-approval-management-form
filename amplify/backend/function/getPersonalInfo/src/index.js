@@ -1,9 +1,6 @@
 // getPersonalInfo/src/index.js
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  ScanCommand
-} from "@aws-sdk/lib-dynamodb";
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, ScanCommand } = require("@aws-sdk/lib-dynamodb");
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -112,7 +109,7 @@ function withCors(body, statusCode = 200) {
   };
 }
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return withCors({}, 200);
   }

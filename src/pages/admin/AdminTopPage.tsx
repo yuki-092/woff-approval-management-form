@@ -24,6 +24,12 @@ const AdminTopPage = () => {
         >
           稟議申請一覧
         </button>
+        <button
+          onClick={() => navigate('/admin/personal-info')}
+          className="admin-top-button"
+        >
+          個人情報申請一覧
+        </button>
       </div>
     </div>
   );

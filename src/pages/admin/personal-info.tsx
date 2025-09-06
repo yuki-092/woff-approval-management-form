@@ -25,7 +25,7 @@ type PersonalInfoRequest = {
   userId: string;
   displayName: string;
   departmentName: string;
-  changeType: '住所変更' | '電話番号変更' | string;
+  changeType: '住所' | '電話' | string;
   submittedAt: string;
   status?: string; // 'cancel' 等（あれば）
   // 住所変更用
@@ -146,8 +146,8 @@ const PersonalInfoPage = () => {
         '変更種別': item.changeType ?? '',
         'ステータス': item.status === 'cancel' ? '取消' : overallStatus,
         '申請日時': item.submittedAt ? dayjs(item.submittedAt).format('YYYY/MM/DD HH:mm') : '',
-        '新しい住所': item.changeType === '住所変更' ? (item.newAddress ?? '') : '',
-        '新しい電話番号': item.changeType === '電話番号変更' ? (item.newPhoneNumber ?? '') : '',
+        '新しい住所': item.changeType === '住所' ? (item.newAddress ?? '') : '',
+        '新しい電話番号': item.changeType === '電話' ? (item.newPhoneNumber ?? '') : '',
         '通勤情報1': item.commuteInfo1 ?? '',
         '通勤情報2': item.commuteInfo2 ?? '',
         '通勤情報3': item.commuteInfo3 ?? '',
@@ -229,7 +229,7 @@ const PersonalInfoPage = () => {
               <div><strong>所属:</strong> {item.departmentName}</div>
               <div><strong>変更種別:</strong> {item.changeType}</div>
 
-              {item.changeType === '住所変更' ? (
+              {item.changeType === '住所' ? (
                 <>
                   <div><strong>新しい住所:</strong> {item.newAddress && item.newAddress.trim() ? item.newAddress : '（未入力）'}</div>
                   <div className="commute-section">
@@ -240,7 +240,7 @@ const PersonalInfoPage = () => {
                     <div><strong>交通費（往復）合計:</strong> {formatYen(item.commuteCostTotal)}</div>
                   </div>
                 </>
-              ) : item.changeType === '電話番号変更' ? (
+              ) : item.changeType === '電話' ? (
                 <>
                   <div><strong>新しい電話番号:</strong> {item.newPhoneNumber || '（未入力）'}</div>
                 </>

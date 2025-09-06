@@ -6,10 +6,12 @@ const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
 
 const TABLE = process.env.TABLE_NAME || "RingiPersonalInfo";
+console.log("[getPersonalInfo] Booting function. TABLE:", TABLE, "NODE_ENV:", process.env.NODE_ENV, "AWS_REGION:", process.env.AWS_REGION);
 
 // commutes の柔軟パース（配列/文字列JSON/文字列）
 function parseCommutes(raw) {
   try {
+    // console.debug("[parseCommutes] raw:", typeof raw, Array.isArray(raw) ? "(array)" : raw);
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     if (typeof raw === "string") {
@@ -59,6 +61,7 @@ function mapStatusForOverall(approverStatuses = []) {
 }
 
 function rowToPersonalInfo(item) {
+  // console.debug("[rowToPersonalInfo] requestId:", item && item.requestId);
   const commutes = parseCommutes(item.commutes);
   const { commuteInfo1, commuteInfo2, commuteInfo3 } = pickCommuteInfo(commutes);
 
@@ -110,23 +113,39 @@ function withCors(body, statusCode = 200) {
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
+  // Normalize method & path across Lambda URL / API Gateway (REST, HTTP v2)
+  const method =
+    (event && event.httpMethod) ||
+    (event && event.requestContext && event.requestContext.http && event.requestContext.http.method) ||
+    (event && event.requestContext && event.requestContext.httpMethod) ||
+    'GET';
+  const path =
+    (event && event.path) ||
+    (event && event.requestContext && event.requestContext.http && event.requestContext.http.path) ||
+    '/';
+
+  console.log("[handler] invoked. method:", method, "path:", path, "table:", TABLE);
+  // console.debug("[handler] headers:", event && event.headers);
+  if (method === "OPTIONS") {
     return withCors({}, 200);
   }
-  if (event.httpMethod !== "GET") {
+  if (method !== "GET") {
     return withCors({ message: "Method Not Allowed" }, 405);
   }
 
-  // クエリパラメータは使わず、全件をフェッチ
+  console.log("[handler] start full-scan fetch. No query params used.");
   const items = [];
   let ExclusiveStartKey = undefined;
 
   try {
     do {
+      const startedAt = Date.now();
       const res = await ddb.send(new ScanCommand({
         TableName: TABLE,
         ExclusiveStartKey
       }));
+      const duration = Date.now() - startedAt;
+      console.log("[handler] scan page fetched.", "items:", (res.Items && res.Items.length) || 0, "hasMore:", !!res.LastEvaluatedKey, "durationMs:", duration);
       if (res.Items && res.Items.length) {
         items.push(...res.Items);
       }
@@ -134,14 +153,43 @@ exports.handler = async (event) => {
     } while (ExclusiveStartKey);
   } catch (e) {
     console.error("DynamoDB Scan error:", e);
+    if (e && e.$metadata) {
+      console.error("[handler] ddb metadata:", e.$metadata);
+    }
     return withCors({ message: "Internal Server Error" }, 500);
   }
 
-  const mapped = items.map(rowToPersonalInfo);
+  console.log("[handler] scan completed. totalItems:", items.length);
+
+  let mapped = [];
+  try {
+    mapped = items.map(rowToPersonalInfo);
+  } catch (e) {
+    console.error("[handler] mapping error:", e && e.message);
+    // 一部壊れたデータがあっても他は返せるようにする
+    mapped = [];
+    for (const it of items) {
+      try {
+        mapped.push(rowToPersonalInfo(it));
+      } catch (ee) {
+        console.error("[handler] row mapping failed for requestId:", it && it.requestId, "error:", ee && ee.message);
+      }
+    }
+  }
+  console.log("[handler] mapping completed. mappedCount:", mapped.length);
+  if (mapped.length > 0) {
+    console.log("[handler] firstItem(sample):", {
+      requestId: mapped[0].requestId,
+      changeType: mapped[0].changeType,
+      submittedAt: mapped[0].submittedAt,
+      approversCount: (mapped[0].approvers && mapped[0].approvers.length) || 0
+    });
+  }
 
   // 全件返却（ページングは行わない）
   const body = {
     personalInfoRequests: mapped
   };
+  console.log("[handler] responding 200 with personalInfoRequests:", body.personalInfoRequests.length);
   return withCors(body, 200);
 };

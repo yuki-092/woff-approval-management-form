@@ -48,7 +48,7 @@ const PersonalInfoPage = () => {
   };
 
   useEffect(() => {
-    fetch('https://4ub5nmvxbpfxlizulqovd7o5xy0nwuvg.lambda-url.ap-northeast-1.on.aws/')
+    fetch('https://q6as6ts76mdsywpueduew5lp7i0jkzpq.lambda-url.ap-northeast-1.on.aws/')
       .then((response) => response.json())
       .then((payload) => {
         const list = payload.personalInfoRequests || [];

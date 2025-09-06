@@ -16,6 +16,11 @@
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     },
+    "getPersonalInfo": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
     "handleApprovalReject": {
       "build": true,
       "dependsOn": [],

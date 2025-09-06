@@ -77,6 +77,22 @@
         }
       ]
     },
+    "AMPLIFY_function_getPersonalInfo_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "getPersonalInfo"
+        }
+      ]
+    },
+    "AMPLIFY_function_getPersonalInfo_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "getPersonalInfo"
+        }
+      ]
+    },
     "AMPLIFY_function_handleApprovalReject_deploymentBucketName": {
       "usedBy": [
         {

@@ -120,50 +120,31 @@ export const handler = async (event) => {
     return withCors({ message: "Method Not Allowed" }, 405);
   }
 
-  const qs = event.queryStringParameters || {};
-  const limit = Math.min(parseInt(qs.limit || "50", 10), 200);
-  const nextToken = qs.nextToken ? JSON.parse(Buffer.from(qs.nextToken, "base64").toString("utf8")) : undefined;
-  const from = qs.from ? new Date(qs.from) : null;
-  const to = qs.to ? new Date(qs.to) : null;
-  const statusFilter = qs.status || "";
+  // クエリパラメータは使わず、全件をフェッチ
+  const items = [];
+  let ExclusiveStartKey = undefined;
 
-  // 現状は Scan + クライアント側フィルタ
-  // もし GSI (例えば createdAt を sort key にした index) があれば Query に切替推奨
-  const scanInput = {
-    TableName: TABLE,
-    Limit: limit,
-    ExclusiveStartKey: nextToken
-  };
-
-  const scanRes = await ddb.send(new ScanCommand(scanInput));
-  const items = scanRes.Items || [];
-
-  // フィルタリング（from/to, status）
-  const filtered = items.filter((it) => {
-    if (from || to) {
-      const created = it.createdAt ? new Date(it.createdAt) : null;
-      if (!created) return false;
-      if (from && created < from) return false;
-      if (to && created > to) return false;
-    }
-    if (statusFilter) {
-      // 全体ステータスで絞りたい場合は承認者ステータスから推定
-      const approverStatuses = [it.approver1Status, it.approver2Status].filter(Boolean);
-      const overall = it.status === "cancel" ? "cancel" : mapStatusForOverall(approverStatuses);
-      if (overall !== statusFilter) return false;
-    }
-    return true;
-  });
-
-  const mapped = filtered.map(rowToPersonalInfo);
-
-  // 返却
-  const body = {
-    personalInfoRequests: mapped,
-  };
-  if (scanRes.LastEvaluatedKey) {
-    body.nextToken = Buffer.from(JSON.stringify(scanRes.LastEvaluatedKey)).toString("base64");
+  try {
+    do {
+      const res = await ddb.send(new ScanCommand({
+        TableName: TABLE,
+        ExclusiveStartKey
+      }));
+      if (res.Items && res.Items.length) {
+        items.push(...res.Items);
+      }
+      ExclusiveStartKey = res.LastEvaluatedKey;
+    } while (ExclusiveStartKey);
+  } catch (e) {
+    console.error("DynamoDB Scan error:", e);
+    return withCors({ message: "Internal Server Error" }, 500);
   }
 
+  const mapped = items.map(rowToPersonalInfo);
+
+  // 全件返却（ページングは行わない）
+  const body = {
+    personalInfoRequests: mapped
+  };
   return withCors(body, 200);
 };

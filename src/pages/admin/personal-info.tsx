@@ -20,80 +20,6 @@ const formatYenZero = (value: any): string => {
   return `¥${num.toLocaleString('ja-JP')}`;
 };
 
-// 通勤情報の簡易パーサー（「手段・区間・料金」を推定表示）
-type ParsedCommute = {
-  mode?: string;   // 徒歩/電車/バス/地下鉄/JR/新幹線/自転車/車 等
-  section?: string; // 区間（例: 美野島 → 博多駅）
-  fare?: number | null; // 料金（片道/往復の明記は元文字列に依存）
-  raw: string;     // 元文字列（パースできない場合のフォールバック表示）
-};
-
-const parseCommuteInfo = (input?: string | null): ParsedCommute | null => {
-  if (!input) return null;
-  const cleaned = String(input).trim();
-  if (!cleaned) return null;
-
-  // 手段候補を抽出
-  const modeMatch = cleaned.match(/(徒歩|電車|バス|地下鉄|JR|新幹線|自転車|車)/);
-  const mode = modeMatch ? modeMatch[1] : undefined;
-
-  // 「→ / ->」や区切り記号で区間を推定
-  let section: string | undefined = undefined;
-  const arrow = cleaned.match(/([^→\-]+?)(?:\s*(?:→|->)\s*)(.+)/);
-  if (arrow) {
-    section = `${arrow[1].trim()} → ${arrow[2].trim()}`;
-  } else {
-    const parts = cleaned.split(/[|｜,/／]/).map(p => p.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      // 先頭要素が手段なら2番目を区間に採用
-      section = parts[0].match(/(徒歩|電車|バス|地下鉄|JR|新幹線|自転車|車)/) ? parts[1] : parts[0];
-    }
-  }
-
-  // 金額（最初に現れる数値）を抽出
-  const fareMatch = cleaned.match(/([¥￥]?\s*\d[\d,]*)/);
-  const fare = fareMatch ? Number(fareMatch[1].replace(/[^\d]/g, '')) : null;
-
-  return { mode, section, fare, raw: cleaned };
-};
-
-const renderCommuteRow = (label: string, value?: string | null) => {
-  const parsed = parseCommuteInfo(value);
-  if (!parsed) {
-    return (
-      <tr className="commute-row">
-        <td className="commute-col-label">{label}</td>
-        <td className="commute-col-mode">（なし）</td>
-        <td className="commute-col-section">—</td>
-        <td className="commute-col-fare">—</td>
-      </tr>
-    );
-  }
-  return (
-    <tr className="commute-row">
-      <td className="commute-col-label">{label}</td>
-      <td className="commute-col-mode">{parsed.mode ?? '—'}</td>
-      <td className="commute-col-section">{parsed.section ?? parsed.raw}</td>
-      <td className="commute-col-fare">{parsed.fare != null ? `¥${parsed.fare.toLocaleString('ja-JP')}` : '—'}</td>
-    </tr>
-  );
-};
-
-const renderCommuteLine = (label: string, value?: string | null) => {
-  const parsed = parseCommuteInfo(value);
-  if (!parsed) {
-    return (
-      <div className="commute-line">{`${label}, （なし）, —, —`}</div>
-    );
-  }
-  const mode = parsed.mode ?? '—';
-  const section = parsed.section ?? parsed.raw;
-  const fareStr = parsed.fare != null ? `¥${parsed.fare.toLocaleString('ja-JP')}` : '—';
-  return (
-    <div className="commute-line">{`${label}, ${mode}, ${section}, ${fareStr}`}</div>
-  );
-};
-
 type Approver = {
   approverId: string;
   approverName: string;
@@ -115,11 +41,7 @@ type PersonalInfoRequest = {
   // 電話番号変更用
   newPhoneNumber?: string;
   // 通勤情報（任意・存在すれば表示）
-  commuteInfo1?: string;
-  commuteInfo2?: string;
-  commuteInfo3?: string;
-  commuteInfos?: string[]; // 新フォーマット（配列）
-  commutes?: string[];     // 受信データがこのキーの場合にも対応
+  commutes?: { method?: string; route?: string; fareRoundTrip?: number | string }[];
   commuteCostTotal?: string | number; // 往復合計
   totalFare?: string | number; // APIによっては totalFare 名で来る
   approvers: Approver[];
@@ -225,10 +147,7 @@ const PersonalInfoPage = () => {
 
     const exportData = sortedData.map((item) => {
       const overallStatus = getOverallStatus(item.approvers);
-      const rawList = Array.isArray((item as any).commuteInfos)
-        ? (item as any).commuteInfos
-        : (Array.isArray((item as any).commutes) ? (item as any).commutes : [item.commuteInfo1, item.commuteInfo2, item.commuteInfo3]);
-      const commuteList = (rawList || []).filter((v: any) => typeof v === 'string' && v.trim().length > 0);
+      const commuteList = item.commutes ?? [];
       return {
         '申請者': item.displayName ?? '',
         '所属': item.departmentName ?? '',
@@ -237,10 +156,10 @@ const PersonalInfoPage = () => {
         '申請日時': item.submittedAt ? dayjs(item.submittedAt).format('YYYY/MM/DD HH:mm') : '',
         '新しい住所': item.changeType === '住所' ? (item.newAddress ?? '') : '',
         '新しい電話番号': item.changeType === '電話' ? (item.newPhoneNumber ?? '') : '',
-        '通勤情報1': commuteList[0] ?? '',
-        '通勤情報2': commuteList[1] ?? '',
-        '通勤情報3': commuteList[2] ?? '',
-        '通勤費合計金額(往復)': (item.commuteCostTotal ?? (item as any).totalFare) ?? '',
+        '通勤情報1': commuteList[0] ? `${commuteList[0].method ?? ''}, ${commuteList[0].route ?? ''}, ${commuteList[0].fareRoundTrip ?? ''}` : '',
+        '通勤情報2': commuteList[1] ? `${commuteList[1].method ?? ''}, ${commuteList[1].route ?? ''}, ${commuteList[1].fareRoundTrip ?? ''}` : '',
+        '通勤情報3': commuteList[2] ? `${commuteList[2].method ?? ''}, ${commuteList[2].route ?? ''}, ${commuteList[2].fareRoundTrip ?? ''}` : '',
+        '通勤費合計金額(往復)': formatYenZero(item.commuteCostTotal ?? (item as any).totalFare),
       };
     });
 
@@ -324,15 +243,15 @@ const PersonalInfoPage = () => {
                   <div className="commute-section">
                     <div className="commute-title"><strong>通勤経路</strong></div>
                     <div className="commute-lines">
-                      {(() => {
-                        const rawList = Array.isArray((item as any).commuteInfos)
-                          ? (item as any).commuteInfos
-                          : (Array.isArray((item as any).commutes) ? (item as any).commutes : [item.commuteInfo1, item.commuteInfo2, item.commuteInfo3]);
-                        const commuteList = (rawList || []).filter((v: any) => typeof v === 'string' && v.trim().length > 0);
-                        return commuteList.length > 0
-                          ? commuteList.map((info: string, index: number) => renderCommuteLine(`経路${index + 1}`, info))
-                          : renderCommuteLine('経路1', null);
-                      })()}
+                      {item.commutes && item.commutes.length > 0 ? (
+                        item.commutes.map((c, idx) => (
+                          <div key={idx} className="commute-line">
+                            {`経路${idx + 1}, ${c.method ?? '—'}, ${c.route ?? '—'}, ${c.fareRoundTrip ? `¥${Number(c.fareRoundTrip).toLocaleString('ja-JP')}` : '—'}`}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="commute-line">経路1, （なし）, —, —</div>
+                      )}
                     </div>
                     <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYenZero(item.commuteCostTotal ?? (item as any).totalFare)}</div>
                   </div>

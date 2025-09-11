@@ -1,4 +1,3 @@
-// getPersonalInfo/src/index.js
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, ScanCommand } = require("@aws-sdk/lib-dynamodb");
 const { STSClient, GetCallerIdentityCommand } = require("@aws-sdk/client-sts");
@@ -30,6 +29,32 @@ function parseCommutes(raw) {
   } catch {
     return [];
   }
+}
+
+function toNumberSafe(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const n = Number(String(v).replace(/[^\d.-]/g, ''));
+  return Number.isNaN(n) ? null : n;
+}
+
+// {method, route, fareRoundTrip} の形に正規化
+function normalizeCommuteObjects(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((c) => {
+    if (c == null) return {};
+    if (typeof c === 'string') {
+      return { route: c };
+    }
+    if (typeof c === 'object') {
+      // 既知の候補キーを吸収
+      const method = c.method ?? c.mode ?? c.type ?? c.transport ?? undefined;
+      const route = c.route ?? c.name ?? c.text ?? c.detail ?? c.fromTo ?? undefined;
+      const fare = c.fareRoundTrip ?? c.roundTripFare ?? c.fare ?? c.price ?? c.cost ?? undefined;
+      const fareRoundTrip = toNumberSafe(fare) ?? undefined;
+      return { method, route, fareRoundTrip };
+    }
+    return {};
+  });
 }
 
 function pickCommuteInfo(commutes) {
@@ -65,6 +90,10 @@ function mapStatusForOverall(approverStatuses = []) {
 function rowToPersonalInfo(item) {
   // console.debug("[rowToPersonalInfo] requestId:", item && item.requestId);
   const commutes = parseCommutes(item.commutes);
+  const normalizedCommutes = normalizeCommuteObjects(commutes);
+  const fareSum = normalizedCommutes.reduce((sum, c) => sum + (toNumberSafe(c.fareRoundTrip) ?? 0), 0);
+  const totalFareNum = toNumberSafe(item.totalFare);
+  const commuteCostTotalNum = (totalFareNum ?? fareSum) ?? 0;
   const { commuteInfo1, commuteInfo2, commuteInfo3 } = pickCommuteInfo(commutes);
 
   const approvers = [
@@ -94,10 +123,12 @@ function rowToPersonalInfo(item) {
     status: item.status, // cancel が入る可能性
     newAddress: item.addressNew,
     newPhoneNumber: item.phoneNew,
+    commutes: normalizedCommutes,
     commuteInfo1,
     commuteInfo2,
     commuteInfo3,
-    commuteCostTotal: item.totalFare,
+    commuteCostTotal: commuteCostTotalNum,
+    totalFare: commuteCostTotalNum,
     approvers
   };
 }

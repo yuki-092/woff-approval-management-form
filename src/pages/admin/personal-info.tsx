@@ -12,6 +12,14 @@ const formatYen = (value: string | number | undefined | null): string => {
   return `¥${num.toLocaleString('ja-JP')}`;
 };
 
+// 空や0は「0円」で表記する（合計金額用）
+const formatYenZero = (value: any): string => {
+  if (value === undefined || value === null || value === '') return '0円';
+  const num = typeof value === 'number' ? value : Number(String(value).replace(/[^\d.-]/g, ''));
+  if (Number.isNaN(num) || num === 0) return '0円';
+  return `¥${num.toLocaleString('ja-JP')}`;
+};
+
 // 通勤情報の簡易パーサー（「手段・区間・料金」を推定表示）
 type ParsedCommute = {
   mode?: string;   // 徒歩/電車/バス/地下鉄/JR/新幹線/自転車/車 等
@@ -68,6 +76,21 @@ const renderCommuteRow = (label: string, value?: string | null) => {
       <td className="commute-col-section">{parsed.section ?? parsed.raw}</td>
       <td className="commute-col-fare">{parsed.fare != null ? `¥${parsed.fare.toLocaleString('ja-JP')}` : '—'}</td>
     </tr>
+  );
+};
+
+const renderCommuteLine = (label: string, value?: string | null) => {
+  const parsed = parseCommuteInfo(value);
+  if (!parsed) {
+    return (
+      <div className="commute-line">{`${label}, （なし）, —, —`}</div>
+    );
+  }
+  const mode = parsed.mode ?? '—';
+  const section = parsed.section ?? parsed.raw;
+  const fareStr = parsed.fare != null ? `¥${parsed.fare.toLocaleString('ja-JP')}` : '—';
+  return (
+    <div className="commute-line">{`${label}, ${mode}, ${section}, ${fareStr}`}</div>
   );
 };
 
@@ -300,28 +323,18 @@ const PersonalInfoPage = () => {
                   <div><strong>新しい住所:</strong> {item.newAddress && item.newAddress.trim() ? item.newAddress : '（未入力）'}</div>
                   <div className="commute-section">
                     <div className="commute-title"><strong>通勤経路</strong></div>
-                    <table className="commute-table" role="table">
-                      <thead>
-                        <tr>
-                          <th className="commute-col-label">経路</th>
-                          <th className="commute-col-mode">手段</th>
-                          <th className="commute-col-section">区間</th>
-                          <th className="commute-col-fare">料金</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(() => {
-                          const rawList = Array.isArray((item as any).commuteInfos)
-                            ? (item as any).commuteInfos
-                            : (Array.isArray((item as any).commutes) ? (item as any).commutes : [item.commuteInfo1, item.commuteInfo2, item.commuteInfo3]);
-                          const commuteList = (rawList || []).filter((v: any) => typeof v === 'string' && v.trim().length > 0);
-                          return commuteList.length > 0
-                            ? commuteList.map((info: string, index: number) => renderCommuteRow(`経路${index + 1}`, info))
-                            : renderCommuteRow('経路1', null);
-                        })()}
-                      </tbody>
-                    </table>
-                    <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYen(item.commuteCostTotal ?? (item as any).totalFare)}</div>
+                    <div className="commute-lines">
+                      {(() => {
+                        const rawList = Array.isArray((item as any).commuteInfos)
+                          ? (item as any).commuteInfos
+                          : (Array.isArray((item as any).commutes) ? (item as any).commutes : [item.commuteInfo1, item.commuteInfo2, item.commuteInfo3]);
+                        const commuteList = (rawList || []).filter((v: any) => typeof v === 'string' && v.trim().length > 0);
+                        return commuteList.length > 0
+                          ? commuteList.map((info: string, index: number) => renderCommuteLine(`経路${index + 1}`, info))
+                          : renderCommuteLine('経路1', null);
+                      })()}
+                    </div>
+                    <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYenZero(item.commuteCostTotal ?? (item as any).totalFare)}</div>
                   </div>
                 </>
               ) : item.changeType === '電話' ? (

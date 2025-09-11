@@ -95,6 +95,13 @@ const PersonalInfoPage = () => {
     return s === '電話' || s === '電話番号' || s === '電話番号変更' || s === '電話変更' || s === 'TEL' || s === '電話番号の変更';
   };
 
+  const getChangeLabel = (changeType?: string) => {
+    if (!changeType) return '個人情報変更';
+    if (isPhoneChange(changeType)) return '電話番号変更';
+    if (changeType.trim() === '住所') return '住所変更';
+    return '個人情報変更';
+  };
+
   useEffect(() => {
     fetch('https://q6as6ts76mdsywpueduew5lp7i0jkzpq.lambda-url.ap-northeast-1.on.aws/')
       .then((response) => response.json())
@@ -154,7 +161,6 @@ const PersonalInfoPage = () => {
     const headers = [
       '申請者',
       '所属',
-      '変更種別',
       'ステータス',
       '申請日時',
       '新しい住所',
@@ -171,7 +177,6 @@ const PersonalInfoPage = () => {
       return {
         '申請者': item.displayName ?? '',
         '所属': item.departmentName ?? '',
-        '変更種別': item.changeType ?? '',
         'ステータス': item.status === 'cancel' ? '取消' : overallStatus,
         '申請日時': item.submittedAt ? dayjs(item.submittedAt).format('YYYY/MM/DD HH:mm') : '',
         '新しい住所': item.changeType === '住所' ? (item.newAddress ?? '') : '',
@@ -245,7 +250,7 @@ const PersonalInfoPage = () => {
           <div className={`approval-card ${item.status === 'cancel' ? 'cancelled' : ''}`} key={item.requestId}>
             {item.status === 'cancel' && <div className="cancel-overlay">cancel</div>}
             <div className="approval-header-top">
-              <span className="badge">個人情報変更</span>
+              <span className="badge">{getChangeLabel(item.changeType)}</span>
               <span className="approval-date">
                 申請日時: {item.submittedAt ? new Date(item.submittedAt).toLocaleString('ja-JP') : ''}
               </span>
@@ -253,7 +258,6 @@ const PersonalInfoPage = () => {
             <div className="approval-body">
               <div><strong>申請者:</strong> {item.displayName}</div>
               <div><strong>所属:</strong> {item.departmentName}</div>
-              <div><strong>変更種別:</strong> {item.changeType}</div>
 
               {item.changeType === '住所' ? (
                 <>

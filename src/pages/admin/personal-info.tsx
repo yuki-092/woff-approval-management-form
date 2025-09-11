@@ -116,19 +116,6 @@ const PersonalInfoPage = () => {
   if (loading) return <div>読み込み中...</div>;
   if (!data || data.length === 0) return <div>データなし</div>;
 
-  const getStatusTextAndClass = (status: string) => {
-    switch (status) {
-      case '承認':
-        return { text: '承認済み', className: 'status-approved' };
-      case '承認待ち':
-        return { text: '未承認', className: 'status-pending' };
-      case '否決':
-        return { text: '否決', className: 'status-rejected' };
-      default:
-        return { text: status, className: '' };
-    }
-  };
-
   const dateRange: [Date | null, Date | null] = [startDate, endDate];
 
   const filteredData = data.filter((item) => {

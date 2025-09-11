@@ -28,6 +28,12 @@ type Approver = {
   approverComment: string;
 };
 
+type Commute = {
+  method: string;
+  route: string;
+  fareRoundTrip: number; // 往復金額（数値）
+};
+
 type PersonalInfoRequest = {
   requestId: string;
   userId: string;
@@ -41,9 +47,9 @@ type PersonalInfoRequest = {
   // 電話番号変更用
   newPhoneNumber?: string;
   // 通勤情報（任意・存在すれば表示）
-  commutes?: { method?: string; route?: string; fareRoundTrip?: number | string }[];
-  commuteCostTotal?: string | number; // 往復合計
-  totalFare?: string | number; // APIによっては totalFare 名で来る
+  commutes?: Commute[];
+  commuteCostTotal?: number; // 往復合計（数値）
+  totalFare?: number; // APIによっては totalFare 名で来る（数値）
   approvers: Approver[];
 };
 
@@ -139,15 +145,15 @@ const PersonalInfoPage = () => {
       '申請日時',
       '新しい住所',
       '新しい電話番号',
-      '通勤情報1',
-      '通勤情報2',
-      '通勤情報3',
+      '通勤経路',
       '通勤費合計金額(往復)',
     ];
 
     const exportData = sortedData.map((item) => {
       const overallStatus = getOverallStatus(item.approvers);
-      const commuteList = item.commutes ?? [];
+      const commutesStr = (item.commutes ?? [])
+        .map((c, i) => `経路${i + 1}, ${c.method}, ${c.route}, ${c.fareRoundTrip}`)
+        .join(' / ');
       return {
         '申請者': item.displayName ?? '',
         '所属': item.departmentName ?? '',
@@ -156,10 +162,8 @@ const PersonalInfoPage = () => {
         '申請日時': item.submittedAt ? dayjs(item.submittedAt).format('YYYY/MM/DD HH:mm') : '',
         '新しい住所': item.changeType === '住所' ? (item.newAddress ?? '') : '',
         '新しい電話番号': item.changeType === '電話' ? (item.newPhoneNumber ?? '') : '',
-        '通勤情報1': commuteList[0] ? `${commuteList[0].method ?? ''}, ${commuteList[0].route ?? ''}, ${commuteList[0].fareRoundTrip ?? ''}` : '',
-        '通勤情報2': commuteList[1] ? `${commuteList[1].method ?? ''}, ${commuteList[1].route ?? ''}, ${commuteList[1].fareRoundTrip ?? ''}` : '',
-        '通勤情報3': commuteList[2] ? `${commuteList[2].method ?? ''}, ${commuteList[2].route ?? ''}, ${commuteList[2].fareRoundTrip ?? ''}` : '',
-        '通勤費合計金額(往復)': formatYenZero(item.commuteCostTotal ?? (item as any).totalFare),
+        '通勤経路': commutesStr,
+        '通勤費合計金額(往復)': formatYenZero(item.commuteCostTotal ?? item.totalFare),
       };
     });
 
@@ -246,14 +250,14 @@ const PersonalInfoPage = () => {
                       {item.commutes && item.commutes.length > 0 ? (
                         item.commutes.map((c, idx) => (
                           <div key={idx} className="commute-line">
-                            {`経路${idx + 1}, ${c.method ?? '—'}, ${c.route ?? '—'}, ${c.fareRoundTrip ? `¥${Number(c.fareRoundTrip).toLocaleString('ja-JP')}` : '—'}`}
+                            {`経路${idx + 1}, ${c.method || '—'}, ${c.route || '—'}, ${Number.isFinite(c.fareRoundTrip) ? `¥${c.fareRoundTrip.toLocaleString('ja-JP')}` : '—'}`}
                           </div>
                         ))
                       ) : (
                         <div className="commute-line">経路1, （なし）, —, —</div>
                       )}
                     </div>
-                    <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYenZero(item.commuteCostTotal ?? (item as any).totalFare)}</div>
+                    <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYenZero(item.commuteCostTotal ?? item.totalFare)}</div>
                   </div>
                 </>
               ) : item.changeType === '電話' ? (

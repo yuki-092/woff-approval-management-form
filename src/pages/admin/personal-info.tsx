@@ -61,7 +61,15 @@ const PersonalInfoPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const getOverallStatus = (approvers: Approver[]): string => {
-    const statuses = approvers.map(a => a.approverStatus);
+    const normalizeStatus = (s: string) => {
+      switch (s) {
+        case 'PENDING': return '承認待ち';
+        case 'APPROVED': return '承認';
+        case 'REJECTED': return '否決';
+        default: return s;
+      }
+    };
+    const statuses = approvers.map(a => normalizeStatus(a.approverStatus));
     if (statuses.includes('否決')) return '否決';
     if (statuses.includes('承認待ち')) return '承認待ち';
     if (statuses.every(s => s === '承認')) return '承認';
@@ -269,7 +277,11 @@ const PersonalInfoPage = () => {
 
             <div className="approval-approvers">
               {item.approvers?.map((approver, index) => {
-                const { text, className } = getStatusTextAndClass(approver.approverStatus);
+                const normalized = approver.approverStatus === 'PENDING' ? '承認待ち'
+                  : approver.approverStatus === 'APPROVED' ? '承認'
+                  : approver.approverStatus === 'REJECTED' ? '否決'
+                  : approver.approverStatus;
+                const { text, className } = getStatusTextAndClass(normalized);
                 return (
                   <div className="approver" key={index}>
                     <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>

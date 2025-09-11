@@ -76,6 +76,25 @@ const PersonalInfoPage = () => {
     return 'その他';
   };
 
+  const getStatusTextAndClass = (status: string) => {
+    switch (status) {
+      case '承認':
+        return { text: '承認済み', className: 'status-approved' };
+      case '承認待ち':
+        return { text: '未承認', className: 'status-pending' };
+      case '否決':
+        return { text: '否決', className: 'status-rejected' };
+      default:
+        return { text: status, className: '' };
+    }
+  };
+
+  const isPhoneChange = (v?: string) => {
+    if (!v) return false;
+    const s = v.trim();
+    return s === '電話' || s === '電話番号' || s === '電話番号変更' || s === '電話変更' || s === 'TEL' || s === '電話番号の変更';
+  };
+
   useEffect(() => {
     fetch('https://q6as6ts76mdsywpueduew5lp7i0jkzpq.lambda-url.ap-northeast-1.on.aws/')
       .then((response) => response.json())
@@ -169,7 +188,7 @@ const PersonalInfoPage = () => {
         'ステータス': item.status === 'cancel' ? '取消' : overallStatus,
         '申請日時': item.submittedAt ? dayjs(item.submittedAt).format('YYYY/MM/DD HH:mm') : '',
         '新しい住所': item.changeType === '住所' ? (item.newAddress ?? '') : '',
-        '新しい電話番号': item.changeType === '電話' ? (item.newPhoneNumber ?? '') : '',
+        '新しい電話番号': isPhoneChange(item.changeType) ? (item.newPhoneNumber ?? '') : '',
         '通勤経路': commutesStr,
         '通勤費合計金額(往復)': formatYenZero(item.commuteCostTotal ?? item.totalFare),
       };
@@ -252,6 +271,9 @@ const PersonalInfoPage = () => {
               {item.changeType === '住所' ? (
                 <>
                   <div><strong>新しい住所:</strong> {item.newAddress && item.newAddress.trim() ? item.newAddress : '（未入力）'}</div>
+                  {item.newPhoneNumber && (
+                    <div className="phone-inline-note"><strong>（参考）新しい電話番号:</strong> {item.newPhoneNumber}</div>
+                  )}
                   <div className="commute-section">
                     <div className="commute-title"><strong>通勤経路</strong></div>
                     <div className="commute-lines">
@@ -268,7 +290,7 @@ const PersonalInfoPage = () => {
                     <div className="commute-total"><strong>交通費（往復）合計:</strong> {formatYenZero(item.commuteCostTotal ?? item.totalFare)}</div>
                   </div>
                 </>
-              ) : item.changeType === '電話' ? (
+              ) : isPhoneChange(item.changeType) ? (
                 <>
                   <div><strong>新しい電話番号:</strong> {item.newPhoneNumber || '（未入力）'}</div>
                 </>

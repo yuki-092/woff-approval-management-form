@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import CompletePage from './CompletePage';
 import { useNavigate } from 'react-router-dom';
 
 // Define the types for approver and approval data
@@ -40,6 +41,7 @@ export const ApprovalManagementForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(true);
   const [currentTypeName, setCurrentTypeName] = useState<string | null>(null);
+  const [isSubmitComplete, setIsSubmitComplete] = useState(false);
 
   // 利用権限タイプ（employmentTypeName / userTypeName）を複数のソースから検出
   const detectUserTypeName = (): string | null => {
@@ -157,8 +159,8 @@ export const ApprovalManagementForm = () => {
       const result = await response.json();
       console.log("Approval/Rejection processed successfully!", result);
 
-      // 承認処理が完了したら CompletePage に遷移
-      navigate("/complete", { replace: true });
+      // 承認処理が完了したら 完了コンポーネントに切り替え
+      setIsSubmitComplete(true);
     } catch (error) {
       console.error("Error calling Lambda:", error);
       alert('送信中にエラーが発生しました。')
@@ -188,6 +190,10 @@ export const ApprovalManagementForm = () => {
 
   if (error) {
     return <div>エラー: {error}</div>;
+  }
+
+  if (isSubmitComplete) {
+    return <CompletePage />;
   }
 
   return (

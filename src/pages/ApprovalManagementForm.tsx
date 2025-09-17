@@ -149,14 +149,16 @@ export const ApprovalManagementForm = () => {
         }
       );
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log("Approval/Rejection processed successfully!", result);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "");
+        throw new Error(errorText || `Request failed: ${response.status}`);
+      }
 
-          setLoading(false);
-          // 承認処理が完了した後に complete page に遷移
-          navigate("/complete", { replace: true });
-      } 
+      const result = await response.json();
+      console.log("Approval/Rejection processed successfully!", result);
+
+      // 承認処理が完了したら CompletePage に遷移
+      navigate("/complete", { replace: true });
     } catch (error) {
       console.error("Error calling Lambda:", error);
       alert('送信中にエラーが発生しました。')

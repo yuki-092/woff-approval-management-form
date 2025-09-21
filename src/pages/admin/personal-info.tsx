@@ -60,6 +60,11 @@ const PersonalInfoPage = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
 
+  const handleApprove = (requestId: string) => {
+    console.log("Approving request:", requestId);
+    // TODO: implement API call
+  };
+
   const getOverallStatus = (approvers: Approver[]): string => {
     const normalizeStatus = (s: string) => {
       switch (s) {
@@ -308,6 +313,14 @@ const PersonalInfoPage = () => {
                   </div>
                 );
               })}
+            </div>
+            <div className="approval-actions">
+              <button
+                className="approve-button"
+                onClick={() => handleApprove(item.requestId)}
+              >
+                承認
+              </button>
             </div>
           </div>
         ))}

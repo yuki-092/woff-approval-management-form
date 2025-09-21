@@ -4,6 +4,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 
+const APPROVAL_ENDPOINT = process.env.NEXT_PUBLIC_APPROVAL_ENDPOINT || 'https://zrhl6xn4r4z2crfbb34pq5zohe0hdxgd.lambda-url.ap-northeast-1.on.aws/';
+
 // 金額を円表記にフォーマット。未入力は「（未入力）」を返す
 const formatYen = (value: string | number | undefined | null): string => {
   if (value === undefined || value === null || value === '') return '（未入力）';
@@ -58,14 +60,86 @@ const PersonalInfoPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [comments, setComments] = useState<Record<string, string>>({});
 
-  const handleApprove = (requestId: string, comment: string = '') => {
-    console.log('Approving request:', { requestId, comment });
-    // TODO: 承認APIコールに差し替え
+  const handleApprove = async (requestId: string, comment: string = '') => {
+    try {
+      const target = data.find(d => d.requestId === requestId);
+      if (!target) return alert('対象データが見つかりません');
+
+      const payload = {
+        requestId: target.requestId,
+        userId: target.userId,
+        displayName: target.displayName,
+        type: '個人情報変更',
+        status: '承認',
+        approverComment: comment
+      };
+      console.log('POST approve:', payload);
+
+      const res = await fetch(APPROVAL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`承認に失敗しました: ${res.status} ${txt}`);
+      }
+
+      // 楽観更新: 最初のPENDINGをAPPROVEDに
+      setData(prev => prev.map(it => {
+        if (it.requestId !== requestId) return it;
+        const idx = (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
+        if (idx === -1) return it;
+        const next = [...it.approvers];
+        next[idx] = { ...next[idx], approverStatus: 'APPROVED', approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
+        return { ...it, approvers: next };
+      }));
+      alert('承認しました');
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || '承認に失敗しました');
+    }
   };
 
-  const handleReject = (requestId: string, comment: string = '') => {
-    console.log('Rejecting request:', { requestId, comment });
-    // TODO: 否決APIコールに差し替え
+  const handleReject = async (requestId: string, comment: string = '') => {
+    try {
+      const target = data.find(d => d.requestId === requestId);
+      if (!target) return alert('対象データが見つかりません');
+
+      const payload = {
+        requestId: target.requestId,
+        userId: target.userId,
+        displayName: target.displayName,
+        type: '個人情報変更',
+        status: '否決',
+        approverComment: comment
+      };
+      console.log('POST reject:', payload);
+
+      const res = await fetch(APPROVAL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`否決に失敗しました: ${res.status} ${txt}`);
+      }
+
+      // 楽観更新: 最初のPENDINGをREJECTEDに
+      setData(prev => prev.map(it => {
+        if (it.requestId !== requestId) return it;
+        const idx = (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
+        if (idx === -1) return it;
+        const next = [...it.approvers];
+        next[idx] = { ...next[idx], approverStatus: 'REJECTED', approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
+        return { ...it, approvers: next };
+      }));
+      alert('否決しました');
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || '否決に失敗しました');
+    }
   };
 
   const getOverallStatus = (approvers: Approver[]): string => {

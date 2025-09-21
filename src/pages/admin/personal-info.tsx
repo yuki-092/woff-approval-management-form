@@ -60,20 +60,33 @@ const PersonalInfoPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [comments, setComments] = useState<Record<string, string>>({});
 
-  const handleApprove = async (requestId: string, comment: string = '') => {
+  const handleDecision = async (
+    requestId: string,
+    status: '承認' | '否決',
+    comment: string = ''
+  ) => {
     try {
       const target = data.find(d => d.requestId === requestId);
       if (!target) return alert('対象データが見つかりません');
+
+      const currentIdx = (target.approvers || []).findIndex(
+        a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち'
+      );
+      const currentApprover = currentIdx >= 0 ? target.approvers[currentIdx] : undefined;
+      const nextApprover = currentIdx >= 0 ? target.approvers[currentIdx + 1] : undefined;
 
       const payload = {
         requestId: target.requestId,
         userId: target.userId,
         displayName: target.displayName,
         type: '個人情報変更',
-        status: '承認',
-        approverComment: comment
+        status, // '承認' | '否決'
+        approverComment: comment,
+        approverNumber: currentIdx >= 0 ? currentIdx + 1 : undefined,
+        approverId: currentApprover?.approverId,
+        nextApproverId: nextApprover?.approverId,
       };
-      console.log('POST approve:', payload);
+      console.log('POST decision:', payload);
 
       const res = await fetch(APPROVAL_ENDPOINT, {
         method: 'POST',
@@ -82,63 +95,24 @@ const PersonalInfoPage = () => {
       });
       if (!res.ok) {
         const txt = await res.text();
-        throw new Error(`承認に失敗しました: ${res.status} ${txt}`);
+        throw new Error(`${status}に失敗しました: ${res.status} ${txt}`);
       }
 
-      // 楽観更新: 最初のPENDINGをAPPROVEDに
+      // 楽観更新: 最初のPENDINGを APPROVED / REJECTED に
+      const newFlag = status === '承認' ? 'APPROVED' : 'REJECTED';
       setData(prev => prev.map(it => {
         if (it.requestId !== requestId) return it;
         const idx = (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
         if (idx === -1) return it;
         const next = [...it.approvers];
-        next[idx] = { ...next[idx], approverStatus: 'APPROVED', approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
+        next[idx] = { ...next[idx], approverStatus: newFlag, approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
         return { ...it, approvers: next };
       }));
-      alert('承認しました');
+
+      alert(`${status}しました`);
     } catch (e: any) {
       console.error(e);
-      alert(e?.message || '承認に失敗しました');
-    }
-  };
-
-  const handleReject = async (requestId: string, comment: string = '') => {
-    try {
-      const target = data.find(d => d.requestId === requestId);
-      if (!target) return alert('対象データが見つかりません');
-
-      const payload = {
-        requestId: target.requestId,
-        userId: target.userId,
-        displayName: target.displayName,
-        type: '個人情報変更',
-        status: '否決',
-        approverComment: comment
-      };
-      console.log('POST reject:', payload);
-
-      const res = await fetch(APPROVAL_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`否決に失敗しました: ${res.status} ${txt}`);
-      }
-
-      // 楽観更新: 最初のPENDINGをREJECTEDに
-      setData(prev => prev.map(it => {
-        if (it.requestId !== requestId) return it;
-        const idx = (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
-        if (idx === -1) return it;
-        const next = [...it.approvers];
-        next[idx] = { ...next[idx], approverStatus: 'REJECTED', approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
-        return { ...it, approvers: next };
-      }));
-      alert('否決しました');
-    } catch (e: any) {
-      console.error(e);
-      alert(e?.message || '否決に失敗しました');
+      alert(e?.message || `${status}に失敗しました`);
     }
   };
 
@@ -371,8 +345,8 @@ const PersonalInfoPage = () => {
               />
 
               <div className="approval-actions">
-                <button type="button" className="btn btn-reject" onClick={() => handleReject(item.requestId, comments[item.requestId] || '')}>否決</button>
-                <button type="button" className="btn btn-approve" onClick={() => handleApprove(item.requestId, comments[item.requestId] || '')}>承認</button>
+                <button type="button" className="btn btn-reject" onClick={() => handleDecision(item.requestId, '否決', comments[item.requestId] || '')}>否決</button>
+                <button type="button" className="btn btn-approve" onClick={() => handleDecision(item.requestId, '承認', comments[item.requestId] || '')}>承認</button>
               </div>
             </div>
           </div>

@@ -744,3 +744,58 @@ body > div[style*="position: absolute"][style*="border: 1px solid rgb(255, 0, 0)
 iframe[src^="chrome-extension://"] { display: none !important; }
 /* 強制的にCompletePageを前面へ */
 #root .approval-completed-container { position: relative; z-index: 2147483647; }
+
+/* --- 承認パネル UI --- */
+.approver-panel {
+  background: #f7f7f7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.approver-title {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.approver-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.approver-icon { font-size: 18px; }
+.approver-name { font-size: 16px; }
+.approver-status { margin-bottom: 12px; color: #333; }
+
+.comment-label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0 6px;
+}
+.comment-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  resize: vertical;
+  background: #fff;
+  margin-bottom: 16px;
+}
+.approval-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-start;
+}
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 28px;
+  font-size: 18px;
+  cursor: pointer;
+}
+.btn-approve { background: #2bb24c; color: #fff; }
+.btn-reject { background: #e53935; color: #fff; }
+.btn:hover { opacity: .9; }

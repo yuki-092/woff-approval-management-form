@@ -41,15 +41,12 @@ type PersonalInfoRequest = {
   departmentName: string;
   changeType: '住所' | '電話' | string;
   submittedAt: string;
-  status?: string; // 'cancel' 等（あれば）
-  // 住所変更用
+  status?: string; // 'cancel' 等
   newAddress?: string;
-  // 電話番号変更用
   newPhoneNumber?: string;
-  // 通勤情報（任意・存在すれば表示）
   commutes?: Commute[];
-  commuteCostTotal?: number; // 往復合計（数値）
-  totalFare?: number; // APIによっては totalFare 名で来る（数値）
+  commuteCostTotal?: number;
+  totalFare?: number;
   approvers: Approver[];
 };
 
@@ -59,10 +56,16 @@ const PersonalInfoPage = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [comments, setComments] = useState<Record<string, string>>({});
 
-  const handleApprove = (requestId: string) => {
-    console.log("Approving request:", requestId);
-    // TODO: implement API call
+  const handleApprove = (requestId: string, comment: string = '') => {
+    console.log('Approving request:', { requestId, comment });
+    // TODO: 承認APIコールに差し替え
+  };
+
+  const handleReject = (requestId: string, comment: string = '') => {
+    console.log('Rejecting request:', { requestId, comment });
+    // TODO: 否決APIコールに差し替え
   };
 
   const getOverallStatus = (approvers: Approver[]): string => {
@@ -83,14 +86,10 @@ const PersonalInfoPage = () => {
 
   const getStatusTextAndClass = (status: string) => {
     switch (status) {
-      case '承認':
-        return { text: '承認済み', className: 'status-approved' };
-      case '承認待ち':
-        return { text: '未承認', className: 'status-pending' };
-      case '否決':
-        return { text: '否決', className: 'status-rejected' };
-      default:
-        return { text: status, className: '' };
+      case '承認': return { text: '承認済み', className: 'status-approved' };
+      case '承認待ち': return { text: '未承認', className: 'status-pending' };
+      case '否決': return { text: '否決', className: 'status-rejected' };
+      default: return { text: status, className: '' };
     }
   };
 
@@ -109,14 +108,14 @@ const PersonalInfoPage = () => {
 
   useEffect(() => {
     fetch('https://q6as6ts76mdsywpueduew5lp7i0jkzpq.lambda-url.ap-northeast-1.on.aws/')
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((payload) => {
         const list = payload.personalInfoRequests || [];
         setData(list);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
+      .catch((err) => {
+        console.error('Error fetching data:', err);
         setLoading(false);
       });
   }, []);
@@ -135,26 +134,17 @@ const PersonalInfoPage = () => {
       const fromDate = dayjs(dateRange[0]);
       const toDate = dayjs(dateRange[1]);
       const submitted = dayjs(item.submittedAt);
-      if (
-        !(
-          submitted.isSame(fromDate, 'day') ||
-          submitted.isSame(toDate, 'day') ||
-          (submitted.isAfter(fromDate) && submitted.isBefore(toDate))
-        )
-      ) {
+      if (!(submitted.isSame(fromDate, 'day') || submitted.isSame(toDate, 'day') || (submitted.isAfter(fromDate) && submitted.isBefore(toDate)))) {
         return false;
       }
     }
-
     if (statusFilter) {
       const overallStatus = getOverallStatus(item.approvers);
       if (overallStatus !== statusFilter) return false;
     }
-
     return true;
   });
 
-  // 申請日時（submittedAt）の降順
   const sortedData = [...filteredData].sort((a, b) => {
     const aTime = new Date(a.submittedAt || '').getTime();
     const bTime = new Date(b.submittedAt || '').getTime();
@@ -162,23 +152,10 @@ const PersonalInfoPage = () => {
   });
 
   const handleExportToExcel = () => {
-    // すべての項目を網羅するヘッダー
-    const headers = [
-      '申請者',
-      '所属',
-      'ステータス',
-      '申請日時',
-      '新しい住所',
-      '新しい電話番号',
-      '通勤経路',
-      '通勤費合計金額(往復)',
-    ];
-
+    const headers = ['申請者','所属','ステータス','申請日時','新しい住所','新しい電話番号','通勤経路','通勤費合計金額(往復)'];
     const exportData = sortedData.map((item) => {
       const overallStatus = getOverallStatus(item.approvers);
-      const commutesStr = (item.commutes ?? [])
-        .map((c, i) => `経路${i + 1}, ${c.method}, ${c.route}, ${c.fareRoundTrip}`)
-        .join(' / ');
+      const commutesStr = (item.commutes ?? []).map((c, i) => `経路${i + 1}, ${c.method}, ${c.route}, ${c.fareRoundTrip}`).join(' / ');
       return {
         '申請者': item.displayName ?? '',
         '所属': item.departmentName ?? '',
@@ -190,15 +167,9 @@ const PersonalInfoPage = () => {
         '通勤費合計金額(往復)': formatYenZero(item.commuteCostTotal ?? item.totalFare),
       };
     });
-
     const dataForSheet = exportData.map(row => {
-      const ordered: any = {};
-      headers.forEach(key => {
-        ordered[key] = (row as Record<string, string | number | undefined>)[key] ?? '';
-      });
-      return ordered;
+      const ordered: any = {}; headers.forEach(key => { ordered[key] = (row as any)[key] ?? ''; }); return ordered;
     });
-
     const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '個人情報変更');
@@ -238,11 +209,7 @@ const PersonalInfoPage = () => {
 
       <div className="status-filter">
         <label>申請状況フィルター:</label>
-        <select
-          className="filter-select"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
+        <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">すべて</option>
           <option value="承認">承認</option>
           <option value="承認待ち">未承認</option>
@@ -256,10 +223,9 @@ const PersonalInfoPage = () => {
             {item.status === 'cancel' && <div className="cancel-overlay">cancel</div>}
             <div className="approval-header-top">
               <span className="badge">{getChangeLabel(item.changeType)}</span>
-              <span className="approval-date">
-                申請日時: {item.submittedAt ? new Date(item.submittedAt).toLocaleString('ja-JP') : ''}
-              </span>
+              <span className="approval-date">申請日時: {item.submittedAt ? new Date(item.submittedAt).toLocaleString('ja-JP') : ''}</span>
             </div>
+
             <div className="approval-body">
               <div><strong>申請者:</strong> {item.displayName}</div>
               <div><strong>所属:</strong> {item.departmentName}</div>
@@ -267,9 +233,7 @@ const PersonalInfoPage = () => {
               {item.changeType === '住所' ? (
                 <>
                   <div><strong>新しい住所:</strong> {item.newAddress && item.newAddress.trim() ? item.newAddress : '（未入力）'}</div>
-                  {item.newPhoneNumber && (
-                    <div className="phone-inline-note"><strong>（参考）新しい電話番号:</strong> {item.newPhoneNumber}</div>
-                  )}
+                  {item.newPhoneNumber && (<div className="phone-inline-note"><strong>（参考）新しい電話番号:</strong> {item.newPhoneNumber}</div>)}
                   <div className="commute-section">
                     <div className="commute-title"><strong>通勤経路</strong></div>
                     <div className="commute-lines">
@@ -287,18 +251,17 @@ const PersonalInfoPage = () => {
                   </div>
                 </>
               ) : isPhoneChange(item.changeType) ? (
-                <>
-                  <div><strong>新しい電話番号:</strong> {item.newPhoneNumber || '（未入力）'}</div>
-                </>
+                <div><strong>新しい電話番号:</strong> {item.newPhoneNumber || '（未入力）'}</div>
               ) : null}
             </div>
 
             <div className="approval-approvers">
               {item.approvers?.map((approver, index) => {
-                const normalized = approver.approverStatus === 'PENDING' ? '承認待ち'
-                  : approver.approverStatus === 'APPROVED' ? '承認'
-                  : approver.approverStatus === 'REJECTED' ? '否決'
-                  : approver.approverStatus;
+                const normalized =
+                  approver.approverStatus === 'PENDING' ? '承認待ち' :
+                  approver.approverStatus === 'APPROVED' ? '承認' :
+                  approver.approverStatus === 'REJECTED' ? '否決' :
+                  approver.approverStatus;
                 const { text, className } = getStatusTextAndClass(normalized);
                 return (
                   <div className="approver" key={index}>
@@ -314,13 +277,29 @@ const PersonalInfoPage = () => {
                 );
               })}
             </div>
-            <div className="approval-actions">
-              <button
-                className="approve-button"
-                onClick={() => handleApprove(item.requestId)}
-              >
-                承認
-              </button>
+
+            {/* 承認パネル */}
+            <div className="approver-panel">
+              <div className="approver-title">承認者1</div>
+              <div className="approver-row">
+                <span className="approver-icon">⏳</span>
+                <span className="approver-name">{(item as any).approver1Name || (item.approvers?.[0]?.approverName ?? '—')}</span>
+              </div>
+              <div className="approver-status">承認待ち</div>
+
+              <label className="comment-label" htmlFor={`comment-${item.requestId}`}>コメント（任意）</label>
+              <textarea
+                id={`comment-${item.requestId}`}
+                className="comment-textarea"
+                placeholder="コメント（任意）"
+                value={comments[item.requestId] || ''}
+                onChange={(e) => setComments(prev => ({ ...prev, [item.requestId]: e.target.value }))}
+              />
+
+              <div className="approval-actions">
+                <button type="button" className="btn btn-reject" onClick={() => handleReject(item.requestId, comments[item.requestId] || '')}>否決</button>
+                <button type="button" className="btn btn-approve" onClick={() => handleApprove(item.requestId, comments[item.requestId] || '')}>承認</button>
+              </div>
             </div>
           </div>
         ))}

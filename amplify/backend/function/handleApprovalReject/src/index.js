@@ -88,9 +88,9 @@ exports.handler = async (event) => {
             throw new Error("Request body is missing.");
         }
 
-        const { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment } = JSON.parse(event.body);
+        const { requestId, approverNumber, approverId, nextApproverId, status, userId, displayName, type, approverComment } = JSON.parse(event.body);
 
-        console.log("Received approval request:", { requestId, approverNumber, approverName, nextApproverId, status, userId, displayName, type, approverComment });
+        console.log("Received approval request:", { requestId, approverNumber, approverId, nextApproverId, status, userId, displayName, type, approverComment });
 
         // If approverComment is null or undefined, use an empty string to avoid errors in the UpdateExpression
         const commentValue = approverComment || "";
@@ -157,10 +157,10 @@ exports.handler = async (event) => {
                   await sendNotificationToNextApprover(next.approverId, displayName, type);
                 }
               } else {
-                await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName);
+                await sendApprovedNotificationToApplicant(userId, type, approverComment, displayName);
               }
             } else if (status === '否決') {
-              await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName);
+              await sendRejectionNotificationToApplicant(userId, type, approverComment, displayName);
             }
           }
 
@@ -169,6 +169,10 @@ exports.handler = async (event) => {
             headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET' },
             body: JSON.stringify({ message: 'Personal info status updated successfully!' })
           };
+        }
+
+        if (!approverNumber && type !== '個人情報変更' && type !== '個人情報変更申請' && type !== 'personalInfo') {
+          throw new Error('approverNumber is required for this request type');
         }
 
         const params = {
@@ -206,11 +210,11 @@ exports.handler = async (event) => {
                 await sendNotificationToNextApprover(nextApproverId, displayName, type);
             } else {
                 console.log("Final approver, no further approver");
-                await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName);
+                await sendApprovedNotificationToApplicant(userId, type, approverComment, displayName);
             }
         } else if (status === "否決") {
             console.log("Status is rejected, sending rejection notification to applicant");
-            await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName);
+            await sendRejectionNotificationToApplicant(userId, type, approverComment, displayName);
         }
 
         return {
@@ -259,7 +263,7 @@ async function sendNotificationToNextApprover(nextApproverId, displayName, type)
 }
 
 // 申請者への承認完了通知
-async function sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName) {
+async function sendApprovedNotificationToApplicant(userId, type, approverComment, displayName) {
   try {
     console.log('申請者への承認完了通知');
     const prefix = 'OKABOT';
@@ -267,7 +271,7 @@ async function sendApprovedNotificationToApplicant(userId, type, approverName, a
     const botId = process.env[`${prefix}_BOT_ID`];
     const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
     const messageData = {
-      content: { type: 'text', text: `申請が最終承認されました。\n申請者：${displayName}\n申請区分：${type}\n最終承認者：${approverName}\nコメント：${approverComment || ''}` }
+      content: { type: 'text', text: `申請が最終承認されました。\n申請者：${displayName}\n申請区分：${type}\nコメント：${approverComment || ''}` }
     };
     console.log('Sending approved notification to applicant:', messageData);
     const response = await axios.post(apiUrl, messageData, { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });
@@ -278,7 +282,7 @@ async function sendApprovedNotificationToApplicant(userId, type, approverName, a
 }
 
 // 申請やへ否決通知を送信
-async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName) {
+async function sendRejectionNotificationToApplicant(userId, type, approverComment, displayName) {
   try {
     console.log('申請やへ否決通知を送信');
     const prefix = 'OKABOT';
@@ -286,7 +290,7 @@ async function sendRejectionNotificationToApplicant(userId, type, approverName, 
     const botId = process.env[`${prefix}_BOT_ID`];
     const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
     const messageData = {
-      content: { type: 'text', text: `申請が否決されました。\n申請者：${displayName}\n申請区分：${type}\n否決者：${approverName}\nコメント：${approverComment || ''}` }
+      content: { type: 'text', text: `申請が否決されました。\n申請者：${displayName}\n申請区分：${type}\nコメント：${approverComment || ''}` }
     };
     console.log('Sending rejection notification to applicant:', messageData);
     const response = await axios.post(apiUrl, messageData, { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });

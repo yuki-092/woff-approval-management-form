@@ -84,6 +84,7 @@ const PersonalInfoPage = () => {
         approverComment: comment,
         approverNumber: currentIdx >= 0 ? currentIdx + 1 : undefined,
         approverId: currentApprover?.approverId,
+        approverName: currentApprover?.approverName,
         nextApproverId: nextApprover?.approverId,
       };
       console.log('POST decision:', payload);

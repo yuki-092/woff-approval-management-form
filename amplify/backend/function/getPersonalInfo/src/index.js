@@ -100,18 +100,19 @@ function rowToPersonalInfo(item) {
     {
       approverId: item.approver1Id || "",
       approverName: item.approver1Name || "",
-      approverStatus: item.approver1Status || "",   // "承認" / "承認待ち" / "否決" など
-      approverApprovedAt: "",                       // CSVにないため空
-      approverComment: ""                           // CSVにないため空
+      approverStatus: item.approver1Status || "",
+      // 承認日時・コメントをテーブルの既存カラムから取得（存在しない場合は空文字）
+      approverApprovedAt: item.approver1ApprovedAt || "",
+      approverComment: item.approver1Comment || item.approver1_comment || ""
     },
     {
       approverId: item.approver2Id || "",
       approverName: item.approver2Name || "",
       approverStatus: item.approver2Status || "",
-      approverApprovedAt: "",
-      approverComment: ""
+      approverApprovedAt: item.approver2ApprovedAt || "",
+      approverComment: item.approver2Comment || ""
     }
-  ].filter(a => a.approverId || a.approverName); // 空行は削除
+  ].filter(a => a.approverId || a.approverName);
 
   return {
     requestId: item.requestId,

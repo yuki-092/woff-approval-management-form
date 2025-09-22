@@ -799,16 +799,15 @@ iframe[src^="chrome-extension://"] { display: none !important; }
 .btn-approve { background: #2bb24c; color: #fff; }
 .btn-reject { background: #e53935; color: #fff; }
 .btn:hover { opacity: .9; }
-. /* ===================== Approver Card UI (override) ===================== */
+/* ===================== Approver Card UI (override) ===================== */
 /* カードレイアウトに統一（既存flex定義より後に置いて上書き） */
 .approval-approvers {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr; /* 常に1列 */
   gap: 16px;
 }
-@media (min-width: 680px) {
-  .approval-approvers { grid-template-columns: 1fr 1fr; }
-}
+/* 強制的に上書き（以前のflex指定を無効化） */
+.approval-approvers { display: grid !important; }
 
 .approver-card {
   background: #fff;

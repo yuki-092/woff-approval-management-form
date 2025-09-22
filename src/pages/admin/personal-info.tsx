@@ -335,14 +335,17 @@ const PersonalInfoPage = () => {
                   approver.approverStatus;
                 const { text, className } = getStatusTextAndClass(normalized);
                 return (
-                  <div className="approver" key={index}>
-                    <div><strong>承認者{index + 1}:</strong> {approver.approverName}</div>
-                    <div className={className}>{text}</div>
-                    {approver.approverStatus === '承認' && approver.approverApprovedAt && (
+                  <div className="approver-card" key={index}>
+                    <div className="approver-header">
+                      <span className="approver-title">承認者{index + 1}</span>
+                      <span className="approver-name">{approver.approverName || '—'}</span>
+                    </div>
+                    <div className={`approver-status ${className}`}>{text}</div>
+                    {approver.approverApprovedAt && approver.approverStatus === '承認' && (
                       <div className="approver-date">承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}</div>
                     )}
                     {approver.approverComment && (
-                      <div><strong>コメント:</strong> {approver.approverComment}</div>
+                      <div className="approver-comment"><strong>コメント:</strong> {approver.approverComment}</div>
                     )}
                   </div>
                 );
@@ -351,25 +354,24 @@ const PersonalInfoPage = () => {
 
             {/* 承認パネル */}
             <div className="approver-panel">
-              <div className="approver-title">承認者1</div>
-              <div className="approver-row">
-                <span className="approver-icon">⏳</span>
-                <span className="approver-name">{(item as any).approver1Name || (item.approvers?.[0]?.approverName ?? '—')}</span>
-              </div>
-              <div className="approver-status">承認待ち</div>
-
-              <label className="comment-label" htmlFor={`comment-${item.requestId}`}>コメント（任意）</label>
-              <textarea
-                id={`comment-${item.requestId}`}
-                className="comment-textarea"
-                placeholder="コメント（任意）"
-                value={comments[item.requestId] || ''}
-                onChange={(e) => setComments(prev => ({ ...prev, [item.requestId]: e.target.value }))}
-              />
-
-              <div className="approval-actions">
-                <button type="button" className="btn btn-reject" onClick={() => handleDecision(item.requestId, '否決', comments[item.requestId] || '')}>否決</button>
-                <button type="button" className="btn btn-approve" onClick={() => handleDecision(item.requestId, '承認', comments[item.requestId] || '')}>承認</button>
+              <div className="approver-card">
+                <div className="approver-header">
+                  <span className="approver-title">承認者1</span>
+                  <span className="approver-name">{(item as any).approver1Name || (item.approvers?.[0]?.approverName ?? '—')}</span>
+                </div>
+                <div className="approver-status">承認待ち</div>
+                <label className="comment-label" htmlFor={`comment-${item.requestId}`}>コメント（任意）</label>
+                <textarea
+                  id={`comment-${item.requestId}`}
+                  className="comment-textarea"
+                  placeholder="コメント（任意）"
+                  value={comments[item.requestId] || ''}
+                  onChange={(e) => setComments(prev => ({ ...prev, [item.requestId]: e.target.value }))}
+                />
+                <div className="approval-actions">
+                  <button type="button" className="btn btn-reject" onClick={() => handleDecision(item.requestId, '否決', comments[item.requestId] || '')}>否決</button>
+                  <button type="button" className="btn btn-approve" onClick={() => handleDecision(item.requestId, '承認', comments[item.requestId] || '')}>承認</button>
+                </div>
               </div>
             </div>
           </div>

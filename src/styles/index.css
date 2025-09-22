@@ -874,3 +874,15 @@ iframe[src^="chrome-extension://"] { display: none !important; }
 
 /* モバイルの押しやすさ */
 @media (max-width: 480px) { .btn { padding: 12px 22px; font-size: 16px; } }
+/* --- Fix: textarea overflow inside approver-card --- */
+.approver-card .comment-textarea,
+.approver-actions-area .comment-textarea,
+.approver-panel .comment-textarea {
+  box-sizing: border-box; /* include padding & border in width */
+  width: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+/* guard: ensure card hides any accidental overflow */
+.approver-card { overflow: hidden; }

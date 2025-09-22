@@ -20,6 +20,17 @@ async function getSecretJSON(secretId) {
 }
 const pick = (v, fb) => (v ?? fb);
 
+// ---- SECRET ID 自動解決 ----
+function resolveSecretId(prefix) {
+  const fromEnv = process.env[`${prefix}_SECRET_ID`];
+  if (fromEnv) return fromEnv;
+  // 既定候補（OKABOT は okabot/credentials のみ）
+  const candidates = prefix === 'OKABOT'
+    ? ['okabot/credentials']
+    : ['shirakibot/credentials'];
+  return candidates.find(Boolean);
+}
+
 // ---- BOT設定の検証（Secrets or Env）----
 function mask(s, opts = { head: 4, tail: 4 }) {
   if (!s || typeof s !== 'string') return '';
@@ -32,7 +43,7 @@ function validateBotConfig(prefix, sec) {
   const clientSecret = pick(sec?.client_secret, process.env[`${prefix}_CLIENT_SECRET`]);
   const privateKey = pick(sec?.private_key, process.env[`${prefix}_PRIVATE_KEY`]);
   const serviceAccount = pick(sec?.service_account, process.env[`${prefix}_SERVICE_ACCOUNT`]);
-  const botId = process.env[`${prefix}_BOT_ID`];
+  const botId = pick(sec?.bot_id ?? sec?.botId, process.env[`${prefix}_BOT_ID`]);
 
   console.log(`[cfg:${prefix}] client_id=${mask(clientId)} service_account=${serviceAccount || ''} private_key_len=${privateKey ? privateKey.length : 0} bot_id=${botId || ''}`);
 
@@ -50,7 +61,6 @@ function validateBotConfig(prefix, sec) {
 }
 
 // ---- LINE WORKS JWT 生成 ----
-// prefix: 'OKABOT' | 'SHIRAKIBOT'
 const generateJWT = (prefix = 'OKABOT', sec = null) => {
   const now = Math.floor(Date.now() / 1000);
   const iss = pick(sec?.client_id, process.env[`${prefix}_CLIENT_ID`]);
@@ -73,22 +83,28 @@ const generateJWT = (prefix = 'OKABOT', sec = null) => {
   }
 };
 
+// ---- load and validate helper ----
+async function loadAndValidate(prefix = 'OKABOT') {
+  const secretId = resolveSecretId(prefix);
+  let sec = null;
+  if (secretId) {
+    try {
+      sec = await getSecretJSON(secretId);
+      console.log(`Secrets loaded for ${prefix} from`, secretId);
+    } catch (e) {
+      console.warn(`Failed to load secret for ${prefix} from ${secretId}; fallback to env:`, e?.message || e);
+    }
+  } else {
+    console.warn(`${prefix}_SECRET_ID not set and no default secret name available; falling back to env only`);
+  }
+  const cfg = validateBotConfig(prefix, sec);
+  return { sec, cfg };
+}
+
 // ---- LINE WORKS AccessToken 取得 ----
 const getAccessToken = async (prefix = 'OKABOT') => {
   try {
-    const secretId = process.env[`${prefix}_SECRET_ID`];
-    let sec = null;
-    if (secretId) {
-      try {
-        sec = await getSecretJSON(secretId);
-        console.log(`Secrets loaded for ${prefix}`);
-      } catch (e) {
-        console.warn(`Failed to load secret for ${prefix}; fallback to env:`, e?.message || e);
-      }
-    }
-
-    // 設定検証＆サマリログ
-    const cfg = validateBotConfig(prefix, sec);
+    const { sec, cfg } = await loadAndValidate(prefix);
 
     console.log(`start: アクセストークン作成 (${prefix})`);
     const assertion = generateJWT(prefix, sec);
@@ -121,11 +137,37 @@ const getAccessToken = async (prefix = 'OKABOT') => {
   }
 };
 
+async function getAccessTokenAndConfig(prefix = 'OKABOT') {
+  const { sec, cfg } = await loadAndValidate(prefix);
+
+  console.log(`start: アクセストークン作成 (${prefix})`);
+  const assertion = generateJWT(prefix, sec);
+  const params = new URLSearchParams();
+  params.append('assertion', assertion);
+  params.append('grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
+  params.append('client_id', cfg.clientId);
+  params.append('client_secret', cfg.clientSecret);
+  params.append('scope', 'bot');
+
+  const url = 'https://auth.worksmobile.com/oauth2/v2.0/token';
+  console.log(`[token:${prefix}] POST ${url}`);
+  const tokenRes = await axios.post(url, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+  console.log(`[token:${prefix}] status=${tokenRes.status}`);
+
+  if (!tokenRes.data?.access_token) {
+    console.error(`[token:${prefix}] 応答にaccess_tokenなし`, tokenRes.data);
+    throw new Error('アクセストークンが取得できませんでした');
+  }
+
+  const accessToken = tokenRes.data.access_token;
+  console.log(`アクセストークン取得成功(${prefix}): len=${String(accessToken).length}`);
+  return { accessToken, cfg };
+}
+
 // ---- 個人情報変更: createdAt 解決（userId + requestId で1件特定）----
 async function resolvePersonalInfoCreatedAt(tableName, userId, requestId) {
   console.log('resolvePersonalInfoCreatedAt: start', { tableName, userId, requestId });
   if (!userId || !requestId) throw new Error('userId and requestId are required to resolve createdAt');
-  // スキーマが不明なため安全に Scan + Filter で取得（件数は少量想定）
   const scanParams = {
     TableName: tableName,
     FilterExpression: '#uid = :uid AND #rid = :rid',
@@ -147,7 +189,6 @@ exports.handler = async (event) => {
   try {
     console.log("Received event:", JSON.stringify(event, null, 2));
 
-    // CORS preflight
     if (event.requestContext?.http?.method === "OPTIONS") {
       return {
         statusCode: 200,
@@ -164,19 +205,6 @@ exports.handler = async (event) => {
 
     const {
       requestId,
-      approverNumber,      // 現在の承認者番号
-      approverId,          // 現在の承認者ID
-      approverName,        // 現在の承認者名（通知文面用）
-      nextApproverId,      // 次の承認者ID（あれば通知）
-      status,              // '承認' | '否決'
-      userId,              // applicantId
-      displayName,         // 申請者名
-      type,                // '稟議申請' | '休暇申請' | '個人情報変更' 等
-      approverComment      // コメント
-    } = JSON.parse(event.body);
-
-    console.log("Received approval request:", {
-      requestId,
       approverNumber,
       approverId,
       approverName,
@@ -186,28 +214,24 @@ exports.handler = async (event) => {
       displayName,
       type,
       approverComment
+    } = JSON.parse(event.body);
+
+    console.log("Received approval request:", {
+      requestId, approverNumber, approverId, approverName,
+      nextApproverId, status, userId, displayName, type, approverComment
     });
 
-    // --- early validate approverNumber (1-based integer required) ---
     const approverNumberInt = Number(approverNumber);
     if (!Number.isInteger(approverNumberInt) || approverNumberInt <= 0) {
       throw new Error(`Invalid approverNumber: ${approverNumber}`);
     }
 
-    // ---- 稟議 / 休暇 / 個人情報変更----
     let tableName;
     switch (type) {
-      case "稟議申請":
-        tableName = "RingiRequests";
-        break;
-      case "休暇申請":
-        tableName = "LeaveRequests";
-        break;
-      case "個人情報変更":
-        tableName = "RingiPersonalInfo";
-        break;
-      default:
-        throw new Error(`Unknown request type: ${type}`);
+      case "稟議申請": tableName = "RingiRequests"; break;
+      case "休暇申請": tableName = "LeaveRequests"; break;
+      case "個人情報変更": tableName = "RingiPersonalInfo"; break;
+      default: throw new Error(`Unknown request type: ${type}`);
     }
 
     const approvedAt = new Date().toISOString();
@@ -216,7 +240,7 @@ exports.handler = async (event) => {
       switch (t) {
         case '稟議申請': return 'requestId';
         case '休暇申請': return 'requestId';
-        case '個人情報変更': return null; // handled separately
+        case '個人情報変更': return null;
         default: return 'requestId';
       }
     }
@@ -224,7 +248,6 @@ exports.handler = async (event) => {
     const pkName = getPkNameByType(type);
     console.log('DynamoDB update target', { tableName, pkName, requestId, userId });
 
-    // Key 構築（個人情報は複合キー: requestId + createdAt）
     let key;
     if (type === '個人情報変更') {
       const createdAt = await resolvePersonalInfoCreatedAt(tableName, userId, requestId);
@@ -259,24 +282,21 @@ exports.handler = async (event) => {
     await dynamoDb.update(params).promise();
     console.log("DynamoDB update successful");
 
-    // 通知
     if (status === "承認") {
       if (nextApproverId) {
         console.log("Status is approved, sending notification to next approver");
-        // 稟議・休暇の次承認者は OKABOT
-        // 個人情報変更のみSHIRAKIBOT
-        const prefix = (type === "稟議申請" || type === "休暇申請") ? 'OKABOT' : (type === "個人情報変更" ? 'SHIRAKIBOT' : 'OKABOT');
+        const prefix = type === "個人情報変更" ? 'SHIRAKIBOT' : 'OKABOT';
         await sendNotificationToNextApprover(nextApproverId, displayName, type, prefix);
       } else {
         console.log("Final approver, no further approver");
-         // 共通でOKABOT
+        // 個人情報変更でも申請者はOKABOT通知
         const prefix = 'OKABOT';
         await sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName, prefix);
       }
     } else if (status === "否決") {
       console.log("Status is rejected, sending rejection notification to applicant");
-      // 個人情報変更のみSHIRAKIBOT
-      const prefix = type === '個人情報変更' || type === '個人情報変更申請' || type === 'personalInfo' ? 'SHIRAKIBOT' : 'OKABOT';
+      // 個人情報変更でも申請者はOKABOT通知
+      const prefix = 'OKABOT';
       await sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName, prefix);
     }
 
@@ -304,14 +324,11 @@ exports.handler = async (event) => {
   }
 };
 
-// ---- 次の承認者への通知（種別で BOT 切替） ----
-// 個人情報変更: SHIRAKIBOT / 稟議・休暇: OKABOT
 async function sendNotificationToNextApprover(nextApproverId, displayName, type, prefix) {
   try {
     console.log(`次の承認者への通知を送信 (prefix=${prefix})`);
-
-    const accessToken = await getAccessToken(prefix);
-    const botId = process.env[`${prefix}_BOT_ID`];
+    const { accessToken, cfg } = await getAccessTokenAndConfig(prefix);
+    const botId = cfg.botId;
     const recieverId = nextApproverId;
     const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${recieverId}/messages`;
     const messageData = {
@@ -333,12 +350,11 @@ async function sendNotificationToNextApprover(nextApproverId, displayName, type,
   }
 }
 
-// ---- 申請者への承認完了通知（OKABOT/SHIRAKIBOT切替） ----
 async function sendApprovedNotificationToApplicant(userId, type, approverName, approverComment, displayName, prefix = 'OKABOT') {
   try {
     console.log(`申請者への承認完了通知 (prefix=${prefix})`);
-    const accessToken = await getAccessToken(prefix);
-    const botId = process.env[`${prefix}_BOT_ID`];
+    const { accessToken, cfg } = await getAccessTokenAndConfig(prefix);
+    const botId = cfg.botId;
     const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
     const messageData = {
       content: {
@@ -359,12 +375,11 @@ async function sendApprovedNotificationToApplicant(userId, type, approverName, a
   }
 }
 
-// ---- 申請者へ否決通知（OKABOT/SHIRAKIBOT切替） ----
 async function sendRejectionNotificationToApplicant(userId, type, approverName, approverComment, displayName, prefix = 'OKABOT') {
   try {
     console.log(`申請者へ否決通知を送信 (prefix=${prefix})`);
-    const accessToken = await getAccessToken(prefix);
-    const botId = process.env[`${prefix}_BOT_ID`];
+    const { accessToken, cfg } = await getAccessTokenAndConfig(prefix);
+    const botId = cfg.botId;
     const apiUrl = `https://www.worksapis.com/v1.0/bots/${botId}/users/${userId}/messages`;
     const messageData = {
       content: {

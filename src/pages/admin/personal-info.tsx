@@ -65,7 +65,8 @@ const PersonalInfoPage = () => {
   const handleDecision = async (
     requestId: string,
     status: '承認' | '否決',
-    comment: string = ''
+    comment: string = '',
+    approverNumber?: number
   ) => {
     try {
       const target = data.find(d => d.requestId === requestId);
@@ -73,9 +74,10 @@ const PersonalInfoPage = () => {
 
       setLoading(true);
 
-      const currentIdx = (target.approvers || []).findIndex(
-        a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち'
-      );
+      const calcIdx = (arr: Approver[]) => arr.findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
+      const currentIdx = (typeof approverNumber === 'number' && approverNumber > 0)
+        ? approverNumber - 1
+        : calcIdx(target.approvers || []);
       const currentApprover = currentIdx >= 0 ? target.approvers[currentIdx] : undefined;
       const nextApprover = currentIdx >= 0 ? target.approvers[currentIdx + 1] : undefined;
 
@@ -107,7 +109,9 @@ const PersonalInfoPage = () => {
       const newFlag = status === '承認' ? 'APPROVED' : 'REJECTED';
       setData(prev => prev.map(it => {
         if (it.requestId !== requestId) return it;
-        const idx = (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
+        const idx = (typeof approverNumber === 'number' && approverNumber > 0)
+          ? approverNumber - 1
+          : (it.approvers || []).findIndex(a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち');
         if (idx === -1) return it;
         const next = [...it.approvers];
         next[idx] = { ...next[idx], approverStatus: newFlag, approverApprovedAt: new Date().toISOString(), approverComment: comment } as any;
@@ -347,33 +351,27 @@ const PersonalInfoPage = () => {
                     {approver.approverComment && (
                       <div className="approver-comment"><strong>コメント:</strong> {approver.approverComment}</div>
                     )}
+                    {normalized === '承認待ち' && (
+                      <div className="approver-actions-area">
+                        <label className="comment-label" htmlFor={`comment-${item.requestId}-${index}`}>コメント（任意）</label>
+                        <textarea
+                          id={`comment-${item.requestId}-${index}`}
+                          className="comment-textarea"
+                          placeholder="コメント（任意）"
+                          value={comments[`${item.requestId}-${index}`] || ''}
+                          onChange={(e) => setComments(prev => ({ ...prev, [`${item.requestId}-${index}`]: e.target.value }))}
+                        />
+                        <div className="approval-actions">
+                          <button type="button" className="btn btn-reject" disabled={loading} onClick={() => handleDecision(item.requestId, '否決', comments[`${item.requestId}-${index}`] || '', index + 1)}>否決</button>
+                          <button type="button" className="btn btn-approve" disabled={loading} onClick={() => handleDecision(item.requestId, '承認', comments[`${item.requestId}-${index}`] || '', index + 1)}>承認</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            {/* 承認パネル */}
-            <div className="approver-panel">
-              <div className="approver-card">
-                <div className="approver-header">
-                  <span className="approver-title">承認者1</span>
-                  <span className="approver-name">{(item as any).approver1Name || (item.approvers?.[0]?.approverName ?? '—')}</span>
-                </div>
-                <div className="approver-status">承認待ち</div>
-                <label className="comment-label" htmlFor={`comment-${item.requestId}`}>コメント（任意）</label>
-                <textarea
-                  id={`comment-${item.requestId}`}
-                  className="comment-textarea"
-                  placeholder="コメント（任意）"
-                  value={comments[item.requestId] || ''}
-                  onChange={(e) => setComments(prev => ({ ...prev, [item.requestId]: e.target.value }))}
-                />
-                <div className="approval-actions">
-                  <button type="button" className="btn btn-reject" onClick={() => handleDecision(item.requestId, '否決', comments[item.requestId] || '')}>否決</button>
-                  <button type="button" className="btn btn-approve" onClick={() => handleDecision(item.requestId, '承認', comments[item.requestId] || '')}>承認</button>
-                </div>
-              </div>
-            </div>
           </div>
         ))}
       </div>

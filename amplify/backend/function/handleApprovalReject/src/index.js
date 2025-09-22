@@ -10,13 +10,25 @@ const __secretCache = new Map();
 async function getSecretJSON(secretId) {
   if (!secretId) return null;
   if (__secretCache.has(secretId)) return __secretCache.get(secretId);
-  const res = await secrets.getSecretValue({ SecretId: secretId }).promise();
-  const raw =
-    res.SecretString ||
-    (res.SecretBinary ? Buffer.from(res.SecretBinary, 'base64').toString('utf8') : '');
-  const json = raw ? JSON.parse(raw) : null;
-  __secretCache.set(secretId, json);
-  return json;
+  try {
+    const res = await secrets.getSecretValue({ SecretId: secretId }).promise();
+    const raw =
+      res.SecretString ||
+      (res.SecretBinary ? Buffer.from(res.SecretBinary, 'base64').toString('utf8') : '');
+    const json = raw ? JSON.parse(raw) : null;
+    __secretCache.set(secretId, json);
+    return json;
+  } catch (e) {
+    console.error('[secrets] GetSecretValue failed', {
+      secretId,
+      name: e?.name,
+      code: e?.code,
+      message: e?.message,
+      statusCode: e?.$metadata?.httpStatusCode,
+      requestId: e?.$metadata?.requestId,
+    });
+    throw e;
+  }
 }
 const pick = (v, fb) => (v ?? fb);
 
@@ -76,9 +88,16 @@ const generateJWT = (prefix = 'OKABOT', sec = null) => {
 // ---- load and validate helper ----
 async function loadAndValidate(prefix = 'OKABOT') {
   // 固定のSecret名（環境変数による切替は行わない）
-  const secretId = prefix === 'OKABOT' ? 'okabot/credentials' : 'shirakibot/credentials';
+  const secretId = prefix === 'OKABOT' ? 'okkabot/credentials' : 'shirakibot/credentials';
   let sec = null;
   try {
+    try {
+      const sts = new AWS.STS();
+      const ident = await sts.getCallerIdentity({}).promise();
+      console.log('[aws] caller', { account: ident?.Account, arn: ident?.Arn });
+    } catch (e) {
+      console.warn('[aws] getCallerIdentity failed', e?.message || e);
+    }
     sec = await getSecretJSON(secretId);
     console.log(`Secrets loaded for ${prefix} from`, secretId);
   } catch (e) {
@@ -126,29 +145,36 @@ const getAccessToken = async (prefix = 'OKABOT') => {
 
 async function getAccessTokenAndConfig(prefix = 'OKABOT') {
   const { sec, cfg } = await loadAndValidate(prefix);
+  try {
+    console.log(`start: アクセストークン作成 (${prefix})`);
+    const assertion = generateJWT(prefix, sec);
+    const params = new URLSearchParams();
+    params.append('assertion', assertion);
+    params.append('grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
+    params.append('client_id', cfg.clientId);
+    params.append('client_secret', cfg.clientSecret);
+    params.append('scope', 'bot');
 
-  console.log(`start: アクセストークン作成 (${prefix})`);
-  const assertion = generateJWT(prefix, sec);
-  const params = new URLSearchParams();
-  params.append('assertion', assertion);
-  params.append('grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
-  params.append('client_id', cfg.clientId);
-  params.append('client_secret', cfg.clientSecret);
-  params.append('scope', 'bot');
+    const url = 'https://auth.worksmobile.com/oauth2/v2.0/token';
+    console.log(`[token:${prefix}] POST ${url}`);
+    const tokenRes = await axios.post(url, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    console.log(`[token:${prefix}] status=${tokenRes.status}`);
 
-  const url = 'https://auth.worksmobile.com/oauth2/v2.0/token';
-  console.log(`[token:${prefix}] POST ${url}`);
-  const tokenRes = await axios.post(url, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-  console.log(`[token:${prefix}] status=${tokenRes.status}`);
+    if (!tokenRes.data?.access_token) {
+      console.error(`[token:${prefix}] 応答にaccess_tokenなし`, tokenRes.data);
+      throw new Error('アクセストークンが取得できませんでした');
+    }
 
-  if (!tokenRes.data?.access_token) {
-    console.error(`[token:${prefix}] 応答にaccess_tokenなし`, tokenRes.data);
-    throw new Error('アクセストークンが取得できませんでした');
+    const accessToken = tokenRes.data.access_token;
+    console.log(`アクセストークン取得成功(${prefix}): len=${String(accessToken).length}`);
+    return { accessToken, cfg };
+  } catch (error) {
+    if (error.response) {
+      console.error(`[token:${prefix}] HTTP ${error.response.status}`, error.response.data);
+    }
+    console.error(`通知送信エラー(${prefix}):`, error?.message || error, { prefix, botId: cfg?.botId });
+    throw error;
   }
-
-  const accessToken = tokenRes.data.access_token;
-  console.log(`アクセストークン取得成功(${prefix}): len=${String(accessToken).length}`);
-  return { accessToken, cfg };
 }
 
 // ---- 個人情報変更: createdAt 解決（applicantId + requestId で特定、なければ userId で後方互換）----
@@ -192,6 +218,7 @@ async function resolvePersonalInfoCreatedAt(tableName, userId, requestId) {
 exports.handler = async (event) => {
   try {
     console.log("Received event:", JSON.stringify(event, null, 2));
+    console.log('[routing] bots: Ringi/Leave=OKABOT, PersonalInfo: next->SHIRAKIBOT, applicant->OKABOT');
 
     if (event.requestContext?.http?.method === "OPTIONS") {
       return {
@@ -351,6 +378,7 @@ async function sendNotificationToNextApprover(nextApproverId, displayName, type,
       console.error('HTTP Error:', error.response.status, error.response.data);
     }
     console.error('Error sending notification to next approver:', error?.message || error);
+    console.error('sendNotificationToNextApprover failed context', { prefix, nextApproverId, type });
   }
 }
 
@@ -376,6 +404,7 @@ async function sendApprovedNotificationToApplicant(userId, type, approverName, a
       console.error('HTTP Error:', error.response.status, error.response.data);
     }
     console.error('Error sending approved notification to applicant:', error?.message || error);
+    console.error('sendApprovedNotificationToApplicant failed context', { prefix, userId, type });
   }
 }
 
@@ -401,5 +430,6 @@ async function sendRejectionNotificationToApplicant(userId, type, approverName, 
       console.error('HTTP Error:', error.response.status, error.response.data);
     }
     console.error('Error sending rejection notification to applicant:', error?.message || error);
+    console.error('sendRejectionNotificationToApplicant failed context', { prefix, userId, type });
   }
 }

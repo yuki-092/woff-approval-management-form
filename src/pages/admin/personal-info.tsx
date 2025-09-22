@@ -345,7 +345,7 @@ const PersonalInfoPage = () => {
                       <span className="approver-name">{approver.approverName || '—'}</span>
                     </div>
                     <div className={className}>{text}</div>
-                    {(approver.approverApprovedAt && (approver.approverStatus === '承認' || approver.approverStatus === '否決')) && (
+                    {(approver.approverApprovedAt && (normalized === '承認' || normalized === '否決')) && (
                       <div className="approver-date">
                         承認日時: {new Date(approver.approverApprovedAt).toLocaleString('ja-JP')}
                       </div>

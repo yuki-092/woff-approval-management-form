@@ -19,7 +19,7 @@
         },
         "handleApprovalReject": {
           "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",
-          "s3Key": "amplify-builds/handleApprovalReject-322f3153516656795451-build.zip"
+          "s3Key": "amplify-builds/handleApprovalReject-644d517a38664e735633-build.zip"
         },
         "getAllRingiRecordsHandler": {
           "deploymentBucketName": "amplify-woffapprovalmanageme-dev-67e5d-deployment",

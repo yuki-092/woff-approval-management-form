@@ -20,16 +20,6 @@ async function getSecretJSON(secretId) {
 }
 const pick = (v, fb) => (v ?? fb);
 
-// ---- SECRET ID 自動解決 ----
-function resolveSecretId(prefix) {
-  const fromEnv = process.env[`${prefix}_SECRET_ID`];
-  if (fromEnv) return fromEnv;
-  // 既定候補（OKABOT は okabot/credentials のみ）
-  const candidates = prefix === 'OKABOT'
-    ? ['okabot/credentials']
-    : ['shirakibot/credentials'];
-  return candidates.find(Boolean);
-}
 
 // ---- BOT設定の検証（Secrets or Env）----
 function mask(s, opts = { head: 4, tail: 4 }) {
@@ -85,17 +75,14 @@ const generateJWT = (prefix = 'OKABOT', sec = null) => {
 
 // ---- load and validate helper ----
 async function loadAndValidate(prefix = 'OKABOT') {
-  const secretId = resolveSecretId(prefix);
+  // 固定のSecret名（環境変数による切替は行わない）
+  const secretId = prefix === 'OKABOT' ? 'okabot/credentials' : 'shirakibot/credentials';
   let sec = null;
-  if (secretId) {
-    try {
-      sec = await getSecretJSON(secretId);
-      console.log(`Secrets loaded for ${prefix} from`, secretId);
-    } catch (e) {
-      console.warn(`Failed to load secret for ${prefix} from ${secretId}; fallback to env:`, e?.message || e);
-    }
-  } else {
-    console.warn(`${prefix}_SECRET_ID not set and no default secret name available; falling back to env only`);
+  try {
+    sec = await getSecretJSON(secretId);
+    console.log(`Secrets loaded for ${prefix} from`, secretId);
+  } catch (e) {
+    console.warn(`Failed to load secret for ${prefix} from ${secretId}; fallback to env:`, e?.message || e);
   }
   const cfg = validateBotConfig(prefix, sec);
   return { sec, cfg };
@@ -164,26 +151,43 @@ async function getAccessTokenAndConfig(prefix = 'OKABOT') {
   return { accessToken, cfg };
 }
 
-// ---- 個人情報変更: createdAt 解決（userId + requestId で1件特定）----
+// ---- 個人情報変更: createdAt 解決（applicantId + requestId で特定、なければ userId で後方互換）----
 async function resolvePersonalInfoCreatedAt(tableName, userId, requestId) {
-  console.log('resolvePersonalInfoCreatedAt: start', { tableName, userId, requestId });
-  if (!userId || !requestId) throw new Error('userId and requestId are required to resolve createdAt');
-  const scanParams = {
-    TableName: tableName,
-    FilterExpression: '#uid = :uid AND #rid = :rid',
-    ExpressionAttributeNames: { '#uid': 'userId', '#rid': 'requestId' },
-    ExpressionAttributeValues: { ':uid': userId, ':rid': requestId },
-    ProjectionExpression: 'requestId, userId, createdAt'
-  };
-  const res = await dynamoDb.scan(scanParams).promise();
-  const item = (res.Items || [])[0];
-  if (!item || !item.createdAt) {
-    console.error('resolvePersonalInfoCreatedAt: not found', { count: res.Count });
-    throw new Error('対象の個人情報変更レコードが見つかりません（createdAt解決失敗）');
+    console.log('resolvePersonalInfoCreatedAt: start', { tableName, userId, requestId });
+    if (!userId || !requestId) throw new Error('userId and requestId are required to resolve createdAt');
+  
+    // まずは applicantId で検索（DBスキーマに合わせる）
+    const scanByApplicant = {
+      TableName: tableName,
+      FilterExpression: '#aid = :uid AND #rid = :rid',
+      ExpressionAttributeNames: { '#aid': 'applicantId', '#rid': 'requestId' },
+      ExpressionAttributeValues: { ':uid': userId, ':rid': requestId },
+      ProjectionExpression: 'requestId, applicantId, createdAt'
+    };
+    let res = await dynamoDb.scan(scanByApplicant).promise();
+    console.log('resolvePersonalInfoCreatedAt: scan applicantId result', { count: res.Count });
+  
+    // 見つからなければ旧フィールド(userId)で後方互換検索
+    if ((res.Items || []).length === 0) {
+      const scanByUser = {
+        TableName: tableName,
+        FilterExpression: '#uid = :uid AND #rid = :rid',
+        ExpressionAttributeNames: { '#uid': 'userId', '#rid': 'requestId' },
+        ExpressionAttributeValues: { ':uid': userId, ':rid': requestId },
+        ProjectionExpression: 'requestId, userId, createdAt'
+      };
+      res = await dynamoDb.scan(scanByUser).promise();
+      console.log('resolvePersonalInfoCreatedAt: scan userId (fallback) result', { count: res.Count });
+    }
+  
+    const item = (res.Items || [])[0];
+    if (!item || !item.createdAt) {
+      console.error('resolvePersonalInfoCreatedAt: not found', { count: res.Count });
+      throw new Error('対象の個人情報変更レコードが見つかりません（createdAt解決失敗）');
+    }
+    console.log('resolvePersonalInfoCreatedAt: ok', { createdAt: item.createdAt });
+    return item.createdAt;
   }
-  console.log('resolvePersonalInfoCreatedAt: ok', { createdAt: item.createdAt });
-  return item.createdAt;
-}
 
 exports.handler = async (event) => {
   try {

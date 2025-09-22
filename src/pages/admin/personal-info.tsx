@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CompletePage from '../CompletePage';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import * as XLSX from 'xlsx';
@@ -59,6 +60,7 @@ const PersonalInfoPage = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [comments, setComments] = useState<Record<string, string>>({});
+  const [isSubmitComplete, setIsSubmitComplete] = useState(false);
 
   const handleDecision = async (
     requestId: string,
@@ -68,6 +70,8 @@ const PersonalInfoPage = () => {
     try {
       const target = data.find(d => d.requestId === requestId);
       if (!target) return alert('対象データが見つかりません');
+
+      setLoading(true);
 
       const currentIdx = (target.approvers || []).findIndex(
         a => a.approverStatus === 'PENDING' || a.approverStatus === '承認待ち'
@@ -110,10 +114,14 @@ const PersonalInfoPage = () => {
         return { ...it, approvers: next };
       }));
 
+      setIsSubmitComplete(true);
+      setLoading(false);
+
       alert(`${status}しました`);
     } catch (e: any) {
       console.error(e);
       alert(e?.message || `${status}に失敗しました`);
+      setLoading(false);
     }
   };
 
@@ -173,9 +181,6 @@ const PersonalInfoPage = () => {
     document.title = '個人情報変更一覧';
   }, []);
 
-  if (loading) return <div>読み込み中...</div>;
-  if (!data || data.length === 0) return <div>データなし</div>;
-
   const dateRange: [Date | null, Date | null] = [startDate, endDate];
 
   const filteredData = data.filter((item) => {
@@ -225,8 +230,21 @@ const PersonalInfoPage = () => {
     XLSX.writeFile(workbook, '個人情報変更.xlsx');
   };
 
+  if (loading) return <div>読み込み中...</div>;
+  if (!data || data.length === 0) return <div>データなし</div>;
+  if (isSubmitComplete) {
+    return <CompletePage />;
+  }
+
   return (
     <div className="approval-page rainbow-background">
+      {loading && (
+        <div className="loading-container">
+          <div className="loading-overlay">
+            <div className="loader"></div>
+          </div>
+        </div>
+      )}
       <h2 className="approval-title">個人情報変更一覧</h2>
       <button className="mermaid-button" onClick={handleExportToExcel}>
         🐚 エクセル出力
@@ -265,6 +283,10 @@ const PersonalInfoPage = () => {
           <option value="否決">否決</option>
         </select>
       </div>
+
+      {!loading && sortedData.length === 0 && (
+        <div>データなし</div>
+      )}
 
       <div className="approval-list">
         {sortedData.map((item) => (

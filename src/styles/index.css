@@ -799,3 +799,79 @@ iframe[src^="chrome-extension://"] { display: none !important; }
 .btn-approve { background: #2bb24c; color: #fff; }
 .btn-reject { background: #e53935; color: #fff; }
 .btn:hover { opacity: .9; }
+. /* ===================== Approver Card UI (override) ===================== */
+/* カードレイアウトに統一（既存flex定義より後に置いて上書き） */
+.approval-approvers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 680px) {
+  .approval-approvers { grid-template-columns: 1fr 1fr; }
+}
+
+.approver-card {
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+}
+
+.approver-header { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin-bottom: 8px; 
+}
+.approver-title { 
+  font-weight: 800; 
+  font-size: 16px; 
+  color: #333; 
+}
+.approver-name { 
+  font-weight: 800; 
+  font-size: 20px; 
+  color: #111; 
+  letter-spacing: .02em; 
+}
+@media (max-width: 600px) { .approver-name { font-size: 18px; } }
+
+/* ステータスはバッジ化。既存の .approver-status より詳細度を上げる */
+.approver-card .approver-status { 
+  margin-top: 4px; 
+  padding: 6px 10px; 
+  border-radius: 8px; 
+  font-weight: 700; 
+  width: max-content; 
+}
+.approver-card .approver-status.承認,
+.approver-card .approver-status.承認済み { 
+  background: #e6f5ec; 
+  color: #2e8b57; 
+  border: 1px solid rgba(43,178,76,.2); 
+}
+.approver-card .approver-status.承認待ち { 
+  background: #fff3e0; 
+  color: #c77c11; 
+  border: 1px solid rgba(255,165,0,.25); 
+}
+.approver-card .approver-status.否決 { 
+  background: #fdecea; 
+  color: #c62828; 
+  border: 1px solid rgba(229,57,53,.25); 
+}
+
+.approver-date { margin-top: 6px; color: #666; font-size: .9rem; }
+.approver-comment { margin-top: 8px; line-height: 1.6; }
+
+/* カード内の操作領域 */
+.approver-actions-area { margin-top: 12px; }
+.approver-actions { gap: 16px; }
+.approver-actions .btn { min-width: 120px; }
+
+/* フォーム側の承認者名も強調 */
+.approver-panel .approver-name { font-weight: 800; font-size: 19px; color: #111; }
+
+/* モバイルの押しやすさ */
+@media (max-width: 480px) { .btn { padding: 12px 22px; font-size: 16px; } }
